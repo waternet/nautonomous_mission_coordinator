@@ -11,15 +11,15 @@ int main(int argc, char** argv){
 
 	ros::Rate r(1);
 	r.sleep();
+
 	ros::spinOnce();
 	while(ros::ok()){
 		ROS_INFO("test...");
-
+		//Simulate goal order (position and orientation)
 		server.getNextGoal();
 		moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
 
 		r.sleep();
 		ros::spinOnce();
-		//executeOperations();
 	}
 }

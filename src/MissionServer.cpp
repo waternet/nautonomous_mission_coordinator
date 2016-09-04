@@ -8,18 +8,7 @@
 int missionIndex = 0;
 const int maxMission = 4;
 
-/*
- *WPK
-double missionCoordinates[maxMission][2][4] = {
-//	Position(44,640, -20,119, 0,000), Orientation(0,000, 0,000, 0,879, -0,477) = Angle: -2,148
-		{ { 44.6, -20.1, 0.0, 0.0 }, { 0.0, 0.0, 0.879, -0.477 } },
-		//	Position(27,983, -27,779, 0,000), Orientation(0,000, 0,000, 0,827, 0,562) = Angle: 1,948
-		{ { 28.0, -27.8, 0.0, 0.0 }, { 0.0, 0.0, 0.827, 0.562 } },
-		//	Position(16,250, -4,192, 0,000), Orientation(0,000, 0,000, 0,177, 0,984) = Angle: 0,356
-		{ { 16.3, -4.2, 0.0, 0.0 }, { 0.0, 0.0, 0.177, 0.984 } },
-		//	Position(34,772, 29,221, 0,000), Orientation(0,000, 0,000, -0,574, 0,819) = Angle: -1,224
-		{ { 34.8, 29.2, 0.0, 0.0 }, { 0.0, 0.0, -0.574, 0.819 } } };
-*/
+//Create mission points for the journey in WPK
 double missionCoordinates[maxMission][2][4] = {
 
         { { -55, 38, 0.0, 0.0 }, { 0.0, 0.0, 0.477, 0.879 } },
@@ -29,12 +18,6 @@ double missionCoordinates[maxMission][2][4] = {
         { { -31, 46, 0.0, 0.0 }, { 0.0, 0.0, 0.867, -0.499 } },
 
         { { -36, 18, 0.0, 0.0 }, { 0.0, 0.0, 0.946, 0.325 } } };
-/*
-double missionCoordinates[maxMission][2][4] = {
-
-        { { -27.9, 32.6, 0.0, 0.0 }, { 0.0, 0.0, 0.87, 0.49 } },
-
-        { { -51.6, 64.2, 0.0, 0.0 }, { 0.0, 0.0, -0.42, 0.91 } } };*/
 
 MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 		as_(nh_, name.c_str(), boost::bind(&MissionServer::executeCB, this, _1),
@@ -58,8 +41,8 @@ void MissionServer::executeCB(
 	ros::Rate r(1);
 	bool success = true;
 
-	// push_back the seeds for the fibonacci sequence
-	feedback_.feedback.progression = 50;
+	// push_back the seeds for the mission status
+	feedback_.feedback.progression = 50; //arbitrary value for now TODO
 	feedback_.feedback.status = "Ok";
 
 	// publish info to the console for the user
@@ -79,19 +62,9 @@ void MissionServer::executeCB(
 }
 
 void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
-	/*tf::StampedTransform transform;
-	try {
-		ros::Time now = ros::Time::now();
-		listener->waitForTransform("/odom", "/base_link", now,
-				ros::Duration(1.0));
-		 listener->lookupTransform("/odom", "/base_link",
-		                        now, transform);
-	} catch (tf::TransformException ex) {
-		ROS_ERROR("%s", ex.what());
-		ros::Duration(1.0).sleep();
-	}
-	ROS_INFO("Transform from map to odom (%f,%f)", transform.getOrigin().y(), transform.getOrigin().x());
-*/
+	
+	//Select next position, based on the mission coordinate and mission index
+
 	nextPosition_ = geometry_msgs::Point();
 	nextPosition_.x = missionCoordinates[missionIndex][0][0];
 	nextPosition_.y = missionCoordinates[missionIndex][0][1];
@@ -108,7 +81,7 @@ void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
 			nextOrientation_.y, nextOrientation_.z, nextOrientation_.w);
 
 
-
+	//mission index, start at 0 and end at (maxMission-1)
 	missionIndex = (missionIndex + 1) % maxMission;
 
 }
