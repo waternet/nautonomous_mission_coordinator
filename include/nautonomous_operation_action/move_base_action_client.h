@@ -11,7 +11,7 @@
 #include <ros/ros.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
-#include <nautonomous_operation_action_client/MissionAction.h>
+#include <nautonomous_operation_action/MissionAction.h>
 
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"

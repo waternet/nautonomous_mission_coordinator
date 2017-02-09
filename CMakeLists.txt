@@ -1,18 +1,21 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(nautonomous_operation_action_client)
-find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs message_generation tf)
-find_package(Boost REQUIRED COMPONENTS system) 
+project(nautonomous_operation_action)
 
-add_action_files(
-	DIRECTORY action 
-	FILES Mission.action
-)
+find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs message_generation tf)
+
+find_package(Boost REQUIRED COMPONENTS system thread) 
 
 
 add_message_files(
    FILES
    Operation.msg
    Status.msg
+)
+
+
+add_action_files(
+	DIRECTORY action 
+	FILES Mission.action
 )
 
 generate_messages(
@@ -39,19 +42,34 @@ set(CMAKE_CXX_FLAGS "-std=c++11 -L/usr/local/lib ${CMAKE_CXX_FLAGS} -g")
 
 #add executable
 add_executable(operation_manager
-  src/OperationManager.cpp
+  src/operation_manager.cpp
 )
-
-add_library(move_base_action_client src/MoveBaseActionClient.cpp)
-add_library(mission_server src/MissionServer.cpp)
-target_link_libraries(move_base_action_client ${catkin_LIBRARIES} )
-target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_action_client)
-target_link_libraries(operation_manager ${catkin_LIBRARIES} move_base_action_client mission_server)
 
 add_dependencies(
 	operation_manager
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
+
+add_library(move_base_action_client src/move_base_action_client.cpp)
+
+
+add_dependencies(
+	move_base_action_client
+	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+
+add_library(mission_server src/mission_server.cpp)
+
+
+add_dependencies(
+	mission_server
+	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(move_base_action_client ${catkin_LIBRARIES} )
+target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_action_client)
+target_link_libraries(operation_manager ${catkin_LIBRARIES} move_base_action_client mission_server)
+
+
 
 #add gtest
 #if(CATKIN_ENABLE_TESTING)

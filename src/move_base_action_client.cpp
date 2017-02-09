@@ -1,8 +1,5 @@
 
-#include <../include/nautonomous_operation_action_client/MoveBaseActionClient.h>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <../include/actionlib/client/simple_action_client.h>
+#include <../include/nautonomous_operation_action/move_base_action_client.h>
 
 MoveBaseActionClient::MoveBaseActionClient() {
 	ac = new MoveBaseClient("move_base", true);
@@ -47,4 +44,3 @@ int MoveBaseActionClient::requestGoal(geometry_msgs::Point point, geometry_msgs:
 
 	return 0;
 }
-

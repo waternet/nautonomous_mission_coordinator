@@ -1,23 +1,30 @@
-#include "../include/nautonomous_operation_action_client/MissionServer.h"
-
-#include <ros/ros.h>
-#include <actionlib/server/simple_action_server.h>
-#include <nautonomous_operation_action_client/MissionAction.h>
-
+#include "../include/nautonomous_operation_action/mission_server.h"
 
 int missionIndex = 0;
-const int maxMission = 4;
+const int maxMission = 7;
 
 //Create mission points for the journey in WPK
+// coördinate (X, Y, Z)
+// orientatie (X, Y, Z, W) W = 1 en Z = 0 orientatie langs x W = 0 en Z = 0 orientatie langs -x
+// illustratie http://quaternions.online/
 double missionCoordinates[maxMission][2][4] = {
-
-        { { -55, 38, 0.0, 0.0 }, { 0.0, 0.0, 0.477, 0.879 } },
-
-        { { -45, 53, 0.0, 0.0 }, { 0.0, 0.0, -0.246, 0.969 } },
-
-        { { -31, 46, 0.0, 0.0 }, { 0.0, 0.0, 0.867, -0.499 } },
-
-        { { -36, 18, 0.0, 0.0 }, { 0.0, 0.0, 0.946, 0.325 } } };
+    {
+		{-41, -139, 0.0, 0.0},
+		{0.0, 0.0, 0.478, 0.878}
+	},
+        {
+		{6, -79, 0.0, 0.0},
+		{0.0, 0.0, 0.878, -0.478}
+	},
+        {
+		{-43, -142, 0.0, 0.0},
+		{0.0, 0.0, 0.978, 0.208}
+	},
+	{
+		{-78, -125, 0.0, 0.0},
+		{ 0.0, 0.0, 0.208, -0.978}
+	}
+};
 
 MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 		as_(nh_, name.c_str(), boost::bind(&MissionServer::executeCB, this, _1),
@@ -30,7 +37,7 @@ MissionServer::~MissionServer(void) {
 }
 
 void MissionServer::executeCB(
-		const nautonomous_operation_action_client::MissionGoalConstPtr &goal) {
+		const nautonomous_operation_action::MissionGoalConstPtr &goal) {
 	// helper variables
 
 	goal_.operation = goal->operation;

@@ -1,8 +1,8 @@
 #goal definition
-nautonomous_operation_action_client/Operation operation
+nautonomous_operation_action/Operation operation
 ---
 #result definition
-nautonomous_operation_action_client/Status result
+nautonomous_operation_action/Status result
 ---
 #feedback
-nautonomous_operation_action_client/Status feedback
+nautonomous_operation_action/Status feedback
