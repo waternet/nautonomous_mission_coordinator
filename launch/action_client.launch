@@ -3,5 +3,4 @@
 
 	<node name="action_operation_manager" pkg="nautonomous_operation_action" type="operation_manager" output="screen"/>
 
-
 </launch>
