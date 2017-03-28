@@ -3,10 +3,12 @@
 int missionIndex = 0;
 const int maxMission = 7;
 
-//Create mission points for the journey in WPK
-// coördinate (X, Y, Z)
-// orientatie (X, Y, Z, W) W = 1 en Z = 0 orientatie langs x W = 0 en Z = 0 orientatie langs -x
-// illustratie http://quaternions.online/
+/**
+ * Create mission points for the journey in WPK
+ * coördinate (X, Y, Z)
+ * orientatie (X, Y, Z, W) W = 1 en Z = 0 orientatie langs x W = 0 en Z = 0 orientatie langs -x
+ * illustratie http://quaternions.online/
+ */
 double missionCoordinates[maxMission][2][4] = {
     {
 		{-41, -139, 0.0, 0.0},
@@ -26,6 +28,12 @@ double missionCoordinates[maxMission][2][4] = {
 	}
 };
 
+/**
+ *\brief Constructor for MissionServer
+ *\param ros::NodeHandle nh_
+ *\param string name
+ *\return MissionServer
+ */
 MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 		as_(nh_, name.c_str(), boost::bind(&MissionServer::executeCB, this, _1),
 				false), action_name_(name) {
@@ -33,13 +41,21 @@ MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 	as_.start();
 }
 
+/**
+ *\brief Empty constructor for MissionServer
+ *\param 
+ *\return MissionServer
+ */
 MissionServer::~MissionServer(void) {
 }
 
-void MissionServer::executeCB(
-		const nautonomous_operation_action::MissionGoalConstPtr &goal) {
+/**
+ *\brief Empty constructor for MissionServer
+ *\param nautonomous_operation_action::MissionGoalConstPtr &goal
+ *\return
+ */
+void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalConstPtr &goal) {
 	// helper variables
-
 	goal_.operation = goal->operation;
 	nextPosition_ = geometry_msgs::Point(goal_.operation.path[0]);
 	nextOrientation_ = geometry_msgs::Quaternion(
@@ -68,6 +84,9 @@ void MissionServer::executeCB(
 	}
 }
 
+/**
+ *\brief 
+ */
 void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
 	
 	//Select next position, based on the mission coordinate and mission index
@@ -90,6 +109,5 @@ void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
 
 	//mission index, start at 0 and end at (maxMission-1)
 	missionIndex = (missionIndex + 1) % maxMission;
-
 }
 

@@ -2,6 +2,10 @@
 
 using namespace std;
 
+
+/**
+ *\brief Creates MissionServer (mission_server.cpp) and MoveBaseActionClient (move_base_action_client.cpp). Loops through goals from MissionServer
+ */
 int main(int argc, char** argv){
 	ros::init(argc, argv, "move_base_action_client");
 	ros::NodeHandle nh;
