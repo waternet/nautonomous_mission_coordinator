@@ -29,13 +29,11 @@ int main(int argc, char** argv){
 		//Simulate goal order (position and orientation)
 
 		//Manual coordinates 
-		
-		/*
 		server.getNextGoal();
 		moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
-		*/
+		
 
-		/* Autonomous */
+		/* Autonomous 
 
 		if(client.call(srv)) {
 			nextPosition_ = geometry_msgs::Point();
@@ -50,7 +48,7 @@ int main(int argc, char** argv){
 			nextOrientation_.w = srv.response.lon;
 			moveBase.requestGoal(nextPosition_, nextOrientation_);
 		}
-
+		*/
 		
 		
 		r.sleep();
