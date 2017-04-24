@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(nautonomous_operation_action)
 
-find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs message_generation tf nautonomous_navigation_planner)
+find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs message_generation tf nautonomous_navigation_pathfinder)
 
 find_package(Boost REQUIRED COMPONENTS system thread) 
 
