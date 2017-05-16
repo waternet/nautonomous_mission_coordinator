@@ -12,6 +12,7 @@
 
 #include <actionlib/server/simple_action_server.h>
 #include <nautonomous_operation_action/MissionAction.h>
+#include <nautonomous_operation_action/operation_manager.h>
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
 #include <tf/transform_listener.h>

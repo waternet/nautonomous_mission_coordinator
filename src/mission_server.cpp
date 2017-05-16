@@ -1,7 +1,7 @@
 #include "../include/nautonomous_operation_action/mission_server.h"
+#include <gps_common/conversions.h>
 
 int missionIndex = 0;
-const int maxMission = 7;
 
 /**
  * Create mission points for the journey in WPK
@@ -9,24 +9,23 @@ const int maxMission = 7;
  * orientatie (X, Y, Z, W) W = 1 en Z = 0 orientatie langs x W = 0 en Z = 0 orientatie langs -x
  * illustratie http://quaternions.online/
  */
-double missionCoordinates[maxMission][2][4] = {
-    {
-		{-41, -139, 0.0, 0.0},
-		{0.0, 0.0, 0.478, 0.878}
-	},
-        {
-		{6, -79, 0.0, 0.0},
-		{0.0, 0.0, 0.878, -0.478}
-	},
-        {
-		{-43, -142, 0.0, 0.0},
-		{0.0, 0.0, 0.978, 0.208}
-	},
-	{
-		{-78, -125, 0.0, 0.0},
-		{ 0.0, 0.0, 0.208, -0.978}
-	}
+
+
+//Coenhaven
+double missionCoordinatesGPS[4][2] = {
+	{52.404369, 4.863451},
+	{52.404641, 4.863870},
+	{52.404710, 4.863681},
+	{52.404429, 4.863370}
 };
+
+/*
+//Lijnbaansgracht
+double missionCoordinatesGPS[2][2] = {
+	{52.359991, 4.896177},
+	{52.359739, 4.895603}
+};
+*/
 
 /**
  *\brief Constructor for MissionServer
@@ -55,6 +54,9 @@ MissionServer::~MissionServer(void) {
  *\return
  */
 void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalConstPtr &goal) {
+	
+	ROS_INFO("Mission index: %d", missionIndex);
+
 	// helper variables
 	goal_.operation = goal->operation;
 	nextPosition_ = geometry_msgs::Point(goal_.operation.path[0]);
@@ -89,23 +91,50 @@ void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalCon
  */
 void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
 	
-	//Select next position, based on the mission coordinate and mission index
+	double map_utm_x, map_utm_y, goal_utm_x, goal_utm_y;
+	std::string map_zone, goal_zone;
 
+	gps_common::LLtoUTM(map_latitude, map_longitude, map_utm_y, map_utm_x, map_zone);
+	gps_common::LLtoUTM(missionCoordinatesGPS[missionIndex][0], missionCoordinatesGPS[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
+
+	double next_goal_x = goal_utm_x - map_utm_x;
+	double next_goal_y = goal_utm_y - map_utm_y;
+
+	nextPosition_ = geometry_msgs::Point();
+	nextPosition_.x = next_goal_x;
+	nextPosition_.y = next_goal_y;
+	nextPosition_.z = 0.0;
+	ROS_INFO("Next point is %d (%f, %f, %f)", missionIndex, nextPosition_.x, nextPosition_.y,
+			nextPosition_.z);
+
+	nextOrientation_ = geometry_msgs::Quaternion();
+	nextOrientation_.x = 0.0;
+	nextOrientation_.y = 0.0;
+	nextOrientation_.z = 0.0;
+	nextOrientation_.w = 1.0;
+	
+	/*
+	//Select next position, based on the mission coordinate and mission index
 	nextPosition_ = geometry_msgs::Point();
 	nextPosition_.x = missionCoordinates[missionIndex][0][0];
 	nextPosition_.y = missionCoordinates[missionIndex][0][1];
 	nextPosition_.z = missionCoordinates[missionIndex][0][2];
 	ROS_INFO("Next point is %d (%f, %f, %f)", missionIndex, nextPosition_.x, nextPosition_.y,
-			nextPosition_.z);
+			nextPosition_.z)
 
 	nextOrientation_ = geometry_msgs::Quaternion();
 	nextOrientation_.x = missionCoordinates[missionIndex][1][0];
 	nextOrientation_.y = missionCoordinates[missionIndex][1][1];
 	nextOrientation_.z = missionCoordinates[missionIndex][1][2];
 	nextOrientation_.w = missionCoordinates[missionIndex][1][3];
+	*/
+
 	ROS_INFO("Next orientation is (%f, %f, %f, %f)", nextOrientation_.x,
 			nextOrientation_.y, nextOrientation_.z, nextOrientation_.w);
-
+			
+	//TODO:
+	//int maxMission = sizeof(missionCoordinatesGPS)/sizeof(missionCoordinatesGPS[0]);
+	int maxMission = 2;
 
 	//mission index, start at 0 and end at (maxMission-1)
 	missionIndex = (missionIndex + 1) % maxMission;

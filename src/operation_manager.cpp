@@ -5,6 +5,18 @@ using namespace std;
 
 
 /**
+ * \brief Callback for cropper location. Sets location of center of the cropped map
+ * \param 
+ */
+void callbackCropper(const std_msgs::Float32MultiArray& msg) {
+
+    //ROS_INFO("Callback map location: %f / %f", msg.data[0], msg.data[1]);
+
+    map_latitude = msg.data[0];
+    map_longitude = msg.data[1];
+}
+
+/**
  *\brief Creates MissionServer (mission_server.cpp) and MoveBaseActionClient (move_base_action_client.cpp). Loops through goals from MissionServer
  */
 int main(int argc, char** argv){
@@ -21,6 +33,9 @@ int main(int argc, char** argv){
 	MissionServer server(nh,"mission_action");
 	MoveBaseActionClient moveBase = MoveBaseActionClient();
 
+	ros::NodeHandle node;
+	ros::Subscriber crop_sub = node.subscribe("cropper_map_gps", 10, callbackCropper);
+
 	ros::Rate r(1);
 	r.sleep();
 
@@ -31,9 +46,13 @@ int main(int argc, char** argv){
 
 		/* Manual coordinates */
 		
-		server.getNextGoal();
-		moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
-		
+
+		if(map_latitude != 0.0 || map_longitude != 0.0){
+
+			ROS_INFO("Manual coordinates");
+			server.getNextGoal();
+			moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
+		}
 
 		/* Autonomous 
 
