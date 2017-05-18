@@ -11,12 +11,20 @@ int missionIndex = 0;
  */
 
 
+
 //Coenhaven
-double missionCoordinatesGPS[4][2] = {
+double missionCoordinatesGPS_coenhaven[4][2] = {
 	{52.404369, 4.863451},
 	{52.404641, 4.863870},
 	{52.404710, 4.863681},
 	{52.404429, 4.863370}
+};
+
+
+//Brug hoofdkantoor
+double missionCoordinatesGPS[2][2] = {
+	{52.341375, 4.917760},
+	{52.341450, 4.917626}
 };
 
 /*
@@ -89,13 +97,26 @@ void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalCon
 /**
  *\brief 
  */
-void MissionServer::getNextGoal(/*tf::TransformListener* listener*/) {
-	
-	double map_utm_x, map_utm_y, goal_utm_x, goal_utm_y;
+void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ bool simulate) {
+
+	ROS_INFO("Getting next goal");
+
+	ros::NodeHandle node;
+
+ 	double map_utm_x, map_utm_y, goal_utm_x, goal_utm_y;
 	std::string map_zone, goal_zone;
 
+	//Center off map is simulated or set by map cropper
+    if(simulate){
+        //Coenhaven missions: missionCoordinatesGPS_coenhaven
+		ROS_INFO("GPS goal coenhaven");
+		gps_common::LLtoUTM(missionCoordinatesGPS_coenhaven[missionIndex][0], missionCoordinatesGPS_coenhaven[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
+    }else{
+        //Other: missionCoordinatesGPS
+		gps_common::LLtoUTM(missionCoordinatesGPS[missionIndex][0], missionCoordinatesGPS[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
+    } 
+
 	gps_common::LLtoUTM(map_latitude, map_longitude, map_utm_y, map_utm_x, map_zone);
-	gps_common::LLtoUTM(missionCoordinatesGPS[missionIndex][0], missionCoordinatesGPS[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
 
 	double next_goal_x = goal_utm_x - map_utm_x;
 	double next_goal_y = goal_utm_y - map_utm_y;

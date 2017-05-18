@@ -10,7 +10,7 @@ using namespace std;
  */
 void callbackCropper(const std_msgs::Float32MultiArray& msg) {
 
-    //ROS_INFO("Callback map location: %f / %f", msg.data[0], msg.data[1]);
+    ROS_INFO("Operation manager callback map location: %f / %f", msg.data[0], msg.data[1]);
 
     map_latitude = msg.data[0];
     map_longitude = msg.data[1];
@@ -23,6 +23,14 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "move_base_action_client");
 	ros::NodeHandle nh;
 
+	bool simulate;
+	nh.getParam("simulate", simulate);
+	if(simulate){
+		//Coenhaven
+		map_latitude = 52.40568;
+	    map_longitude = 4.86406;
+	}
+
 	/* Autonomous 
 	ros::ServiceClient client = nh.serviceClient<nautonomous_navigation_pathfinder::AddTwoInts>("add_two_ints");
 	nautonomous_navigation_pathfinder::AddTwoInts srv;
@@ -30,11 +38,15 @@ int main(int argc, char** argv){
 	srv.request.d = 4.89248;
 	*/
 
+	ROS_INFO("Operation man simulate: %d", simulate);
+
 	MissionServer server(nh,"mission_action");
 	MoveBaseActionClient moveBase = MoveBaseActionClient();
 
 	ros::NodeHandle node;
 	ros::Subscriber crop_sub = node.subscribe("cropper_map_gps", 10, callbackCropper);
+
+	ROS_INFO("Operation man cropper");
 
 	ros::Rate r(1);
 	r.sleep();
@@ -45,12 +57,10 @@ int main(int argc, char** argv){
 		//Simulate goal order (position and orientation)
 
 		/* Manual coordinates */
-		
-
 		if(map_latitude != 0.0 || map_longitude != 0.0){
 
 			ROS_INFO("Manual coordinates");
-			server.getNextGoal();
+			server.getNextGoal(simulate);
 			moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
 		}
 

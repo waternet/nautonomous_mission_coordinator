@@ -38,6 +38,6 @@ public:
     nautonomous_operation_action::MissionGoal goal_;
     geometry_msgs::Point nextPosition_;
     geometry_msgs::Quaternion nextOrientation_;
-    void getNextGoal();
+    void getNextGoal(bool simulate);
 };
 #endif /* MISSIONSERVER_H_ */

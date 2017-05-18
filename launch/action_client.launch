@@ -1,5 +1,8 @@
 <launch>
 	  <arg name="log" default="false"/>
+		
+		<arg name="simulate" default="true"/>
+		<param name="simulate" value="$(arg simulate)"/>
 
 	<node name="action_operation_manager" pkg="nautonomous_operation_action" type="operation_manager" output="screen"/>
 
