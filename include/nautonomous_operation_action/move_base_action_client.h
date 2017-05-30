@@ -15,13 +15,12 @@
 
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
-#include "actionlib/client/simple_client_goal_state.h"
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 class MoveBaseActionClient{
 private:
-	MoveBaseClient* ac;
+	MoveBaseClient *ac;
 public:
 	MoveBaseActionClient();
 	~MoveBaseActionClient();

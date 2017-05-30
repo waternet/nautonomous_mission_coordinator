@@ -12,12 +12,12 @@ MoveBaseActionClient::~MoveBaseActionClient() {
 }
 
 int MoveBaseActionClient::cancelGoal(){
-	try{
-		ac->cancelGoal();
+
+	if(ac){
+		ac->cancelAllGoals();
 		return 1;
-	}catch(...){
-		return 0;
-	}	
+	}
+	return 0;	
 }
 
 
