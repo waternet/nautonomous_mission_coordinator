@@ -12,7 +12,16 @@
 geometry_msgs::Point nextPosition_;
 geometry_msgs::Quaternion nextOrientation_;
 
+void callbackCropper(const std_msgs::Float32MultiArray& msg);
+
+bool simulate;
 double map_latitude, map_longitude;
+
+
+class MissionServer;
+MissionServer *server;
+
+MoveBaseActionClient *moveBase;
 
 #endif /* OPERATIONMANAGER_H_ */
 

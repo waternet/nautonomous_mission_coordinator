@@ -25,10 +25,12 @@ class MissionServer
 public:
 
   MissionServer(ros::NodeHandle nh_, std::string name);
-
+  
   ~MissionServer(void);
 
   void executeCB(const nautonomous_operation_action::MissionGoalConstPtr &goal);
+  
+  void calculateGoal(int index);
 
   actionlib::SimpleActionServer<nautonomous_operation_action::MissionAction> as_;
     std::string action_name_;
@@ -38,6 +40,7 @@ public:
     nautonomous_operation_action::MissionGoal goal_;
     geometry_msgs::Point nextPosition_;
     geometry_msgs::Quaternion nextOrientation_;
-    void getNextGoal(bool simulate);
+    void getNextGoal();
 };
+
 #endif /* MISSIONSERVER_H_ */

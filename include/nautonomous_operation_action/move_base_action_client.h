@@ -15,6 +15,7 @@
 
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
+#include "actionlib/client/simple_client_goal_state.h"
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -25,6 +26,7 @@ public:
 	MoveBaseActionClient();
 	~MoveBaseActionClient();
 	int requestGoal(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion);
+	int cancelGoal();
 };
 
 /*

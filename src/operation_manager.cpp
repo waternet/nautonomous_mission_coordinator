@@ -14,7 +14,11 @@ void callbackCropper(const std_msgs::Float32MultiArray& msg) {
 
     map_latitude = msg.data[0];
     map_longitude = msg.data[1];
+
+	moveBase->cancelGoal();
+	//server->calculateGoal(-1);
 }
+
 
 /**
  *\brief Creates MissionServer (mission_server.cpp) and MoveBaseActionClient (move_base_action_client.cpp). Loops through goals from MissionServer
@@ -23,12 +27,13 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "move_base_action_client");
 	ros::NodeHandle nh;
 
-	bool simulate;
 	nh.getParam("simulate", simulate);
+
 	if(simulate){
 		//Coenhaven
-		map_latitude = 52.40568;
-	    map_longitude = 4.86406;
+		ROS_INFO("Setting map center to coenhaven");
+		map_latitude = 52.404434;
+	    map_longitude = 4.863055;
 	}
 
 	/* Autonomous 
@@ -40,18 +45,19 @@ int main(int argc, char** argv){
 
 	ROS_INFO("Operation man simulate: %d", simulate);
 
-	MissionServer server(nh,"mission_action");
-	MoveBaseActionClient moveBase = MoveBaseActionClient();
+	server = new MissionServer(nh,"mission_action");
+	moveBase = new MoveBaseActionClient();
 
 	ros::NodeHandle node;
-	ros::Subscriber crop_sub = node.subscribe("cropper_map_gps", 10, callbackCropper);
-
-	ROS_INFO("Operation man cropper");
+	ros::Subscriber crop_sub = node.subscribe("map_server/map_data", 10, callbackCropper);
 
 	ros::Rate r(1);
 	r.sleep();
 
-	ros::spinOnce();
+	//ros::spinOnce();
+	ros::AsyncSpinner spinner(2);
+	spinner.start();
+
 	while(ros::ok()){
 		
 		//Simulate goal order (position and orientation)
@@ -59,9 +65,11 @@ int main(int argc, char** argv){
 		/* Manual coordinates */
 		if(map_latitude != 0.0 || map_longitude != 0.0){
 
+			ROS_INFO("Map values: %f / %f", map_latitude, map_longitude);
+
 			ROS_INFO("Manual coordinates");
-			server.getNextGoal(simulate);
-			moveBase.requestGoal(server.nextPosition_, server.nextOrientation_);
+			server->getNextGoal();
+			moveBase->requestGoal(server->nextPosition_, server->nextOrientation_);
 		}
 
 		/* Autonomous 
@@ -82,6 +90,9 @@ int main(int argc, char** argv){
 		*/
 
 		r.sleep();
-		ros::spinOnce();
+		//ros::spinOnce();
 	}
+
+	delete server;
+	delete moveBase;
 }

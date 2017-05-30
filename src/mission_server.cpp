@@ -23,8 +23,8 @@ double missionCoordinatesGPS_coenhaven[4][2] = {
 
 //Brug hoofdkantoor
 double missionCoordinatesGPS[2][2] = {
-	{52.341375, 4.917760},
-	{52.341450, 4.917626}
+	{52.342372, 4.918400},
+	{52.342080, 4.917244}
 };
 
 /*
@@ -55,6 +55,8 @@ MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
  */
 MissionServer::~MissionServer(void) {
 }
+
+
 
 /**
  *\brief Empty constructor for MissionServer
@@ -95,27 +97,36 @@ void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalCon
 }
 
 /**
- *\brief 
- */
-void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ bool simulate) {
+*\brief Calculating next goal, if index -1, use current goal
+*\param int index
+*/
 
-	ROS_INFO("Getting next goal");
 
-	ros::NodeHandle node;
+void MissionServer::calculateGoal(int index){
+	if(index == -1){
+		ROS_INFO("NULL received");
+		index = missionIndex;
+	}
+
+	ROS_INFO("Simulating: %d", simulate);
 
  	double map_utm_x, map_utm_y, goal_utm_x, goal_utm_y;
 	std::string map_zone, goal_zone;
 
-	//Center off map is simulated or set by map cropper
+	ROS_INFO("Used GPS map: %f / %f", map_latitude, map_longitude);
+
+	//Center of map is simulated or set by map cropper
     if(simulate){
         //Coenhaven missions: missionCoordinatesGPS_coenhaven
-		ROS_INFO("GPS goal coenhaven");
-		gps_common::LLtoUTM(missionCoordinatesGPS_coenhaven[missionIndex][0], missionCoordinatesGPS_coenhaven[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
+		gps_common::LLtoUTM(missionCoordinatesGPS_coenhaven[index][0], missionCoordinatesGPS_coenhaven[index][1], goal_utm_y, goal_utm_x, goal_zone);
+		ROS_INFO("Used GPS coenhaven goal: %f / %f", missionCoordinatesGPS_coenhaven[index][0], missionCoordinatesGPS_coenhaven[index][1]);
     }else{
         //Other: missionCoordinatesGPS
-		gps_common::LLtoUTM(missionCoordinatesGPS[missionIndex][0], missionCoordinatesGPS[missionIndex][1], goal_utm_y, goal_utm_x, goal_zone);
+		gps_common::LLtoUTM(missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1], goal_utm_y, goal_utm_x, goal_zone);
+		ROS_INFO("Used GPS goal: %f / %f", missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1]);
     } 
 
+	//gps_common::LLtoUTM(missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1], goal_utm_y, goal_utm_x, goal_zone);
 	gps_common::LLtoUTM(map_latitude, map_longitude, map_utm_y, map_utm_x, map_zone);
 
 	double next_goal_x = goal_utm_x - map_utm_x;
@@ -125,7 +136,8 @@ void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ bool simulat
 	nextPosition_.x = next_goal_x;
 	nextPosition_.y = next_goal_y;
 	nextPosition_.z = 0.0;
-	ROS_INFO("Next point is %d (%f, %f, %f)", missionIndex, nextPosition_.x, nextPosition_.y,
+
+	ROS_INFO("Next point is %d (%f, %f, %f)", index, nextPosition_.x, nextPosition_.y,
 			nextPosition_.z);
 
 	nextOrientation_ = geometry_msgs::Quaternion();
@@ -133,29 +145,29 @@ void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ bool simulat
 	nextOrientation_.y = 0.0;
 	nextOrientation_.z = 0.0;
 	nextOrientation_.w = 1.0;
-	
-	/*
-	//Select next position, based on the mission coordinate and mission index
-	nextPosition_ = geometry_msgs::Point();
-	nextPosition_.x = missionCoordinates[missionIndex][0][0];
-	nextPosition_.y = missionCoordinates[missionIndex][0][1];
-	nextPosition_.z = missionCoordinates[missionIndex][0][2];
-	ROS_INFO("Next point is %d (%f, %f, %f)", missionIndex, nextPosition_.x, nextPosition_.y,
-			nextPosition_.z)
+}
 
-	nextOrientation_ = geometry_msgs::Quaternion();
-	nextOrientation_.x = missionCoordinates[missionIndex][1][0];
-	nextOrientation_.y = missionCoordinates[missionIndex][1][1];
-	nextOrientation_.z = missionCoordinates[missionIndex][1][2];
-	nextOrientation_.w = missionCoordinates[missionIndex][1][3];
-	*/
+
+
+/**
+ *\brief Calculate next goal
+ */
+void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ ) {
 
 	ROS_INFO("Next orientation is (%f, %f, %f, %f)", nextOrientation_.x,
 			nextOrientation_.y, nextOrientation_.z, nextOrientation_.w);
-			
-	//TODO:
-	//int maxMission = sizeof(missionCoordinatesGPS)/sizeof(missionCoordinatesGPS[0]);
-	int maxMission = 2;
+
+	calculateGoal(missionIndex);		
+
+	int maxMission;
+
+	if(simulate){
+		maxMission = sizeof(missionCoordinatesGPS_coenhaven)/sizeof(missionCoordinatesGPS_coenhaven[0]);
+	}else{
+		maxMission = sizeof(missionCoordinatesGPS)/sizeof(missionCoordinatesGPS[0]);
+	}
+
+	ROS_INFO("Max mission index found: %d", maxMission);
 
 	//mission index, start at 0 and end at (maxMission-1)
 	missionIndex = (missionIndex + 1) % maxMission;

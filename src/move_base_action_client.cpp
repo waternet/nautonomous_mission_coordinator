@@ -11,7 +11,20 @@ MoveBaseActionClient::~MoveBaseActionClient() {
 	}
 }
 
+int MoveBaseActionClient::cancelGoal(){
+	try{
+		ac->cancelGoal();
+		return 1;
+	}catch(...){
+		return 0;
+	}	
+}
+
+
 int MoveBaseActionClient::requestGoal(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion) {
+
+	ROS_INFO("Requesting goal");
+
 	while (!ac->waitForServer(ros::Duration(5.0))) {
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
