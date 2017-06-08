@@ -1,5 +1,5 @@
 #include "../include/nautonomous_operation_action/operation_manager.h"
-#include "../include/nautonomous_navigation_planner/AddTwoInts.h"
+//#include "../include/nautonomous_navigation_planner/AddTwoInts.h"
 
 using namespace std;
 
@@ -12,10 +12,10 @@ int main(int argc, char** argv){
 	ros::NodeHandle nh;
 
 	/* Autonomous */
-	ros::ServiceClient client = nh.serviceClient<nautonomous_navigation_planner::AddTwoInts>("add_two_ints");
-	nautonomous_navigation_planner::AddTwoInts srv;
-	srv.request.c = 52.36905;
-	srv.request.d = 4.89248;
+	//ros::ServiceClient client = nh.serviceClient<nautonomous_navigation_planner::AddTwoInts>("add_two_ints");
+	//nautonomous_navigation_planner::AddTwoInts srv;
+	//srv.request.c = 52.36905;
+	//srv.request.d = 4.89248;
 
 	MissionServer server(nh,"mission_action");
 	MoveBaseActionClient moveBase = MoveBaseActionClient();
