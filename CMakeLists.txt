@@ -8,6 +8,7 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 add_message_files(
    FILES
+  Mission.msg
    Operation.msg
    Status.msg
 )
