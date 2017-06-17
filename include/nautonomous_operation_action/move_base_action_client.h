@@ -11,8 +11,9 @@
 #include <ros/ros.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
-#include <nautonomous_operation_action/MissionAction.h>
+#include <nautonomous_operation_action/MissionPlanAction.h>
 
+#include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Quaternion.h"
 
@@ -24,7 +25,7 @@ private:
 public:
 	MoveBaseActionClient();
 	~MoveBaseActionClient();
-	int requestGoal(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion);
+	int requestGoal(geometry_msgs::Pose2D pose2d);
 };
 
 /*

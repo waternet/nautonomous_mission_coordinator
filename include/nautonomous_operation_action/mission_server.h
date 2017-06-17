@@ -10,13 +10,21 @@
 
 #include "ros/ros.h"
 
+#include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/server/simple_action_server.h>
-#include <nautonomous_operation_action/MissionAction.h>
+#include "nautonomous_operation_action/move_base_action_client.h"
+#include <nautonomous_operation_action/MissionPlanAction.h>
+#include <nautonomous_map_cropper/CropMapPoints.h>
+#include <nautonomous_msgs/MapLoader.h>
+#include "nautonomous_navigation_pathfinder/FindPathAmsterdamCanals.h"
 #include "geometry_msgs/Point.h"
+#include "geometry_msgs/Pose2D.h"
+#include "std_msgs/String.h"
 #include "geometry_msgs/Quaternion.h"
 #include <tf/transform_listener.h>
+#include <vector>
 
-typedef actionlib::SimpleActionServer<nautonomous_operation_action::MissionAction> Server;
+typedef actionlib::SimpleActionServer<nautonomous_operation_action::MissionPlanAction> Server;
 
 class MissionServer
 {
@@ -27,16 +35,9 @@ public:
 
   ~MissionServer(void);
 
-  void executeCB(const nautonomous_operation_action::MissionGoalConstPtr &goal);
+  void executeCB(const nautonomous_operation_action::MissionPlanGoalConstPtr &goal);
 
-  actionlib::SimpleActionServer<nautonomous_operation_action::MissionAction> as_;
-    std::string action_name_;
-    // create messages that are used to published feedback/result
-    nautonomous_operation_action::MissionFeedback feedback_;
-    nautonomous_operation_action::MissionResult result_;
-    nautonomous_operation_action::MissionGoal goal_;
-    geometry_msgs::Point nextPosition_;
-    geometry_msgs::Quaternion nextOrientation_;
-    void getNextGoal();
+  actionlib::SimpleActionServer<nautonomous_operation_action::MissionPlanAction> as_;
+
 };
 #endif /* MISSIONSERVER_H_ */
