@@ -50,6 +50,8 @@ if __name__ == '__main__':
         # Initializes a rospy node so that the SimpleActionClient can
         # publish and subscribe over ROS.
         rospy.init_node('mission_plan_client')
+        manualPath = rospy.get_param('~ManualOperation', True)
+        print "Manual operation " + str(manualPath)
         result = mission_plan_client()
         print("Result:" + str(result.result.progression) + " " + str(result.result.status))
     except rospy.ROSInterruptException:
