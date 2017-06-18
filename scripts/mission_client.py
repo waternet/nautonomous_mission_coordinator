@@ -10,6 +10,8 @@ import actionlib
 import nautonomous_operation_action.msg 
 from geometry_msgs.msg import Pose2D
 
+initial_pose_pub = None
+
 manualPath = False
 
 def mission_plan_client():
@@ -22,16 +24,18 @@ def mission_plan_client():
     client.wait_for_server()
 
     # Creates a goal to send to the action server.
-    
+    operation_name = ""
     if manualPath: 
         poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
-    
+        operation_name = "coenhaven"
     else:
-        poses = [Pose2D(628531, 5805040, 0), Pose2D(629444, 5803420, 0)]
+        poses = [Pose2D(628777, 5804903, 0), Pose2D(629444, 5803420, 0)]
+        operation_name = "canals"
 
     mac = "mac" 
     token = "token"
-    action1 = nautonomous_operation_action.msg.OperationPlan(uuid = None, name = "test", path = poses, operationActions = None, automaticPlanning = not manualPath)
+    
+    action1 = nautonomous_operation_action.msg.OperationPlan(uuid = None, name = operation_name, path = poses, operationActions = None, automaticPlanning = not manualPath)
     actions = [action1]
 
     goal = nautonomous_operation_action.msg.MissionPlanGoal(mac = mac, token = token, operationPlan = actions)
@@ -52,6 +56,7 @@ if __name__ == '__main__':
         rospy.init_node('mission_plan_client')
         manualPath = rospy.get_param('~ManualOperation', True)
         print "Manual operation " + str(manualPath)
+        rospy.sleep(5)
         result = mission_plan_client()
         print("Result:" + str(result.result.progression) + " " + str(result.result.status))
     except rospy.ROSInterruptException:
