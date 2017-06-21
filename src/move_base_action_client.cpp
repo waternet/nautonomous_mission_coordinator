@@ -11,20 +11,7 @@ MoveBaseActionClient::~MoveBaseActionClient() {
 	}
 }
 
-int MoveBaseActionClient::cancelGoal(){
-
-	if(ac){
-		ac->cancelAllGoals();
-		return 1;
-	}
-	return 0;	
-}
-
-
-int MoveBaseActionClient::requestGoal(geometry_msgs::Point point, geometry_msgs::Quaternion quaternion) {
-
-	ROS_INFO("Requesting goal");
-
+int MoveBaseActionClient::requestGoal(geometry_msgs::Pose2D pose2d) {
 	while (!ac->waitForServer(ros::Duration(5.0))) {
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
@@ -35,15 +22,15 @@ int MoveBaseActionClient::requestGoal(geometry_msgs::Point point, geometry_msgs:
 	goal.target_pose.header.stamp = ros::Time::now();
 	
 	//Client publish the wanted position of the robot
-	goal.target_pose.pose.position.x = point.x;
-	goal.target_pose.pose.position.y = point.y;
-	goal.target_pose.pose.position.z = point.z;
+	goal.target_pose.pose.position.x = pose2d.x;
+	goal.target_pose.pose.position.y = pose2d.y;
+	goal.target_pose.pose.position.z = 0;
 	
 	//Client publish the wanted orientation of the robot
-	goal.target_pose.pose.orientation.x = quaternion.x;
-	goal.target_pose.pose.orientation.y = quaternion.y;
-	goal.target_pose.pose.orientation.z = quaternion.z;
-	goal.target_pose.pose.orientation.w = quaternion.w;
+	goal.target_pose.pose.orientation.w = std::cos(pose2d.theta * 0.5);
+	goal.target_pose.pose.orientation.x = 0;
+	goal.target_pose.pose.orientation.y = 0;
+	goal.target_pose.pose.orientation.z = std::sin(pose2d.theta * 0.5);
 
 	ROS_INFO("Sending goal ");
 	ac->sendGoal(goal);

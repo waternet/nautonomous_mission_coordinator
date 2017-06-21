@@ -1,40 +1,6 @@
 #include "../include/nautonomous_operation_action/mission_server.h"
 #include <gps_common/conversions.h>
 
-int missionIndex = 0;
-
-/**
- * Create mission points for the journey in WPK
- * coördinate (X, Y, Z)
- * orientatie (X, Y, Z, W) W = 1 en Z = 0 orientatie langs x W = 0 en Z = 0 orientatie langs -x
- * illustratie http://quaternions.online/
- */
-
-
-
-//Coenhaven
-double missionCoordinatesGPS_coenhaven[4][2] = {
-	{52.404369, 4.863451},
-	{52.404641, 4.863870},
-	{52.404710, 4.863681},
-	{52.404429, 4.863370}
-};
-
-
-//Brug hoofdkantoor
-double missionCoordinatesGPS[2][2] = {
-	{52.342372, 4.918400},
-	{52.342080, 4.917244}
-};
-
-/*
-//Lijnbaansgracht
-double missionCoordinatesGPS[2][2] = {
-	{52.359991, 4.896177},
-	{52.359739, 4.895603}
-};
-*/
-
 /**
  *\brief Constructor for MissionServer
  *\param ros::NodeHandle nh_
@@ -43,7 +9,7 @@ double missionCoordinatesGPS[2][2] = {
  */
 MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 		as_(nh_, name.c_str(), boost::bind(&MissionServer::executeCB, this, _1),
-				false), action_name_(name) {
+				false) {
 //	ROS_INFO("Started action %s", action_name.c_str());
 	as_.start();
 }
@@ -63,29 +29,129 @@ MissionServer::~MissionServer(void) {
  *\param nautonomous_operation_action::MissionGoalConstPtr &goal
  *\return
  */
-void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalConstPtr &goal) {
-	
-	ROS_INFO("Mission index: %d", missionIndex);
+void MissionServer::executeCB(const nautonomous_operation_action::MissionPlanGoalConstPtr &goal) {
 
 	// helper variables
-	goal_.operation = goal->operation;
-	nextPosition_ = geometry_msgs::Point(goal_.operation.path[0]);
-	nextOrientation_ = geometry_msgs::Quaternion(
-			goal_.operation.orientations[0]);
+	nautonomous_operation_action::MissionPlanFeedback feedback_;
+    nautonomous_operation_action::MissionPlanResult result_;
+
+	ROS_INFO("Mission Server callback");
+	//Check token: TODO
+
+	ros::NodeHandle nh;
+    
+	MoveBaseActionClient moveBase = MoveBaseActionClient();
 
 	ros::Rate r(1);
 	bool success = true;
+	int operationIndex = 1;
 
-	// push_back the seeds for the mission status
-	feedback_.feedback.progression = 50; //arbitrary value for now TODO
-	feedback_.feedback.status = "Ok";
+	// For each operation in the mission plan execute the operation.
+	ROS_INFO("Operations size: %i", goal->operationPlan.size());
+	for(std::vector<nautonomous_operation_action::OperationPlan>::const_iterator operation_iterator = goal->operationPlan.begin(); operation_iterator != goal->operationPlan.end(); ++operation_iterator)
+	{
+		nautonomous_operation_action::OperationPlan current_operation = *operation_iterator;
+		ROS_INFO("Operation: %i", operationIndex);
 
-	// publish info to the console for the user
-	ROS_INFO("received goal");
+		//Mission Planner
+		ROS_INFO("Starting path assembly ... ");
+		std::vector<geometry_msgs::Pose2D> path;
+		if(current_operation.automaticPlanning){
+			ROS_INFO("Automatic Planning initiated...");
+			ros::ServiceClient pathfinder_client = nh.serviceClient<nautonomous_navigation_pathfinder::FindPathAmsterdamCanals>("find_path_amsterdam_canals");
+			
+			nautonomous_navigation_pathfinder::FindPathAmsterdamCanals pathfinder_srv;
+			pathfinder_srv.request.goalEasting = current_operation.path[1].x;
+			pathfinder_srv.request.goalNorthing = current_operation.path[1].y;
+			pathfinder_srv.request.testStartEasting = current_operation.path[0].x;
+			pathfinder_srv.request.testStartNorthing = current_operation.path[0].y;
 
-	as_.publishFeedback(feedback_);
+			ROS_INFO("Performing pathfinder request...");		
+			if(pathfinder_client.call(pathfinder_srv)) {
+				// copy the path from the pathfinder to the path vector	
+				int pathIndex = 1;
+				for(std::vector<geometry_msgs::Pose2D>::const_iterator path_iterator = pathfinder_srv.response.pathLocations.begin(); path_iterator != pathfinder_srv.response.pathLocations.end(); ++path_iterator)
+				{
+					path.push_back(*path_iterator);
+				}
+				
+			} else {
+				ROS_ERROR("Failed request for path finder");
+				success = false;
+				break;
+			}
+		} else {
+			// copy the path from the action to the path vector	
+			int pathIndex = 1;
+			for(std::vector<geometry_msgs::Pose2D>::const_iterator path_iterator = current_operation.path.begin(); path_iterator != current_operation.path.end(); ++path_iterator)
+			{
+				path.push_back(*path_iterator);
+			}
+		}
+		ROS_INFO("... finished path assembly.");
 
-	r.sleep();
+
+		//Cropper
+		ros::ServiceClient map_cropper_client = nh.serviceClient<nautonomous_map_cropper::CropMapPoints>("crop_map_points");
+			
+		nautonomous_map_cropper::CropMapPoints map_cropper_srv;
+		map_cropper_srv.request.pathLocations = path;
+		map_cropper_srv.request.operation_name = current_operation.name;
+
+		std::basic_string<char> image_file_name;
+		std::basic_string<char> config_file_name;
+		ROS_INFO("Calling map cropper ... ");
+		if(map_cropper_client.call(map_cropper_srv)){
+			image_file_name = map_cropper_srv.response.image_file_name;
+			config_file_name = map_cropper_srv.response.config_file_name;
+
+			ROS_INFO("Created new map called %s %s", image_file_name.c_str(), config_file_name.c_str());
+		} else {
+			ROS_ERROR("Failed request for map cropper");
+			success = false;
+			break;
+		}
+		ROS_INFO("... finished map cropper.");
+
+
+		//Map Server
+		ros::ServiceClient map_server_client = nh.serviceClient<nautonomous_msgs::MapLoader>("map_server/load_map");
+		
+		nautonomous_msgs::MapLoader map_server_srv;
+		map_server_srv.request.image_file_name = image_file_name;
+		map_server_srv.request.config_file_name = config_file_name;
+
+		ROS_INFO("Calling map server ... %s %s", map_server_srv.request.image_file_name.c_str(), map_server_srv.request.config_file_name.c_str());
+		if(map_server_client.call(map_server_srv)){
+			std::basic_string<char> status = map_server_srv.response.status;
+			ROS_INFO("Loaded new map with status %s", status.c_str());
+		} else {
+			ROS_ERROR("Failed request for map server");
+			success = false;
+			break;
+		}
+		ROS_INFO("... finished map server.");
+
+
+		// Request goals using move base navigation stack
+		int numPath = path.size();
+		ROS_INFO("Number of path segments for move base %i", numPath);
+		for(int pathIndex = 0; pathIndex < numPath; pathIndex++){
+			ROS_INFO("Route index: %i", pathIndex);
+
+			moveBase.requestGoal(path.at(pathIndex));
+
+			// push_back the seeds for the mission status
+			feedback_.feedback.progression = (int) ((pathIndex+1)/numPath); //arbitrary value for now TODO
+			feedback_.feedback.status = "Ok";
+			as_.publishFeedback(feedback_);
+
+			r.sleep();
+			ros::spinOnce();
+			
+		}
+
+	}
 
 	if (success) {
 		result_.result.progression = 100;
@@ -93,83 +159,11 @@ void MissionServer::executeCB(const nautonomous_operation_action::MissionGoalCon
 
 		// set the action state to succeeded
 		as_.setSucceeded(result_);
+	} else {
+		result_.result.progression = 0;
+		result_.result.status = "Failed pathfinder request";
+    
+		// set the action state to succeeded
+		as_.setAborted(result_);
 	}
 }
-
-/**
-*\brief Calculating next goal, if index -1, use current goal
-*\param int index
-*/
-
-
-void MissionServer::calculateGoal(int index){
-	if(index == -1){
-		ROS_INFO("NULL received");
-		index = missionIndex;
-	}
-
-	ROS_INFO("Simulating: %d", simulate);
-
- 	double map_utm_x, map_utm_y, goal_utm_x, goal_utm_y;
-	std::string map_zone, goal_zone;
-
-	ROS_INFO("Used GPS map: %f / %f", map_latitude, map_longitude);
-
-	//Center of map is simulated or set by map cropper
-    if(simulate){
-        //Coenhaven missions: missionCoordinatesGPS_coenhaven
-		gps_common::LLtoUTM(missionCoordinatesGPS_coenhaven[index][0], missionCoordinatesGPS_coenhaven[index][1], goal_utm_y, goal_utm_x, goal_zone);
-		ROS_INFO("Used GPS coenhaven goal: %f / %f", missionCoordinatesGPS_coenhaven[index][0], missionCoordinatesGPS_coenhaven[index][1]);
-    }else{
-        //Other: missionCoordinatesGPS
-		gps_common::LLtoUTM(missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1], goal_utm_y, goal_utm_x, goal_zone);
-		ROS_INFO("Used GPS goal: %f / %f", missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1]);
-    } 
-
-	//gps_common::LLtoUTM(missionCoordinatesGPS[index][0], missionCoordinatesGPS[index][1], goal_utm_y, goal_utm_x, goal_zone);
-	gps_common::LLtoUTM(map_latitude, map_longitude, map_utm_y, map_utm_x, map_zone);
-
-	double next_goal_x = goal_utm_x - map_utm_x;
-	double next_goal_y = goal_utm_y - map_utm_y;
-
-	nextPosition_ = geometry_msgs::Point();
-	nextPosition_.x = next_goal_x;
-	nextPosition_.y = next_goal_y;
-	nextPosition_.z = 0.0;
-
-	ROS_INFO("Next point is %d (%f, %f, %f)", index, nextPosition_.x, nextPosition_.y,
-			nextPosition_.z);
-
-	nextOrientation_ = geometry_msgs::Quaternion();
-	nextOrientation_.x = 0.0;
-	nextOrientation_.y = 0.0;
-	nextOrientation_.z = 0.0;
-	nextOrientation_.w = 1.0;
-}
-
-
-
-/**
- *\brief Calculate next goal
- */
-void MissionServer::getNextGoal(/*tf::TransformListener* listener*/ ) {
-
-	ROS_INFO("Next orientation is (%f, %f, %f, %f)", nextOrientation_.x,
-			nextOrientation_.y, nextOrientation_.z, nextOrientation_.w);
-
-	calculateGoal(missionIndex);		
-
-	int maxMission;
-
-	if(simulate){
-		maxMission = sizeof(missionCoordinatesGPS_coenhaven)/sizeof(missionCoordinatesGPS_coenhaven[0]);
-	}else{
-		maxMission = sizeof(missionCoordinatesGPS)/sizeof(missionCoordinatesGPS[0]);
-	}
-
-	ROS_INFO("Max mission index found: %d", maxMission);
-
-	//mission index, start at 0 and end at (maxMission-1)
-	missionIndex = (missionIndex + 1) % maxMission;
-}
-
