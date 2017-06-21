@@ -16,7 +16,7 @@ int MoveBaseActionClient::requestGoal(geometry_msgs::Pose2D pose2d) {
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
 	move_base_msgs::MoveBaseGoal goal;
-
+	
 	//we'll send a goal to the robot to move 1 meter forward
 	goal.target_pose.header.frame_id = "odom_combined";
 	goal.target_pose.header.stamp = ros::Time::now();

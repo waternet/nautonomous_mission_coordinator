@@ -1,9 +1,25 @@
 #include "../include/nautonomous_operation_action/operation_manager.h"
 
-
 #include "std_msgs/Int32.h"
 
+
 using namespace std;
+
+
+/**
+ * \brief Callback for cropper location. Sets location of center of the cropped map
+ * \param 
+ */
+void callbackCropper(const std_msgs::Float32MultiArray& msg) {
+
+    ROS_INFO("Operation manager callback map location: %f / %f", msg.data[0], msg.data[1]);
+
+    map_latitude = msg.data[0];
+    map_longitude = msg.data[1];
+
+	moveBase->cancelGoal();
+	//server->calculateGoal(-1);
+}
 
 
 /**
@@ -20,7 +36,6 @@ int main(int argc, char** argv){
 	ROS_INFO("Request service");
 	MissionServer server(nh,"mission_server");
 	
-
 	ros::spin();
 
 }

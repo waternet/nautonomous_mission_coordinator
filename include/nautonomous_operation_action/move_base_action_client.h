@@ -21,7 +21,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 
 class MoveBaseActionClient{
 private:
-	MoveBaseClient* ac;
+	MoveBaseClient *ac;
 public:
 	MoveBaseActionClient();
 	~MoveBaseActionClient();

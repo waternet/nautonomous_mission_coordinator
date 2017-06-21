@@ -1,4 +1,5 @@
 #include "../include/nautonomous_operation_action/mission_server.h"
+#include <gps_common/conversions.h>
 
 /**
  *\brief Constructor for MissionServer
@@ -21,12 +22,15 @@ MissionServer::MissionServer(ros::NodeHandle nh_, std::string name) :
 MissionServer::~MissionServer(void) {
 }
 
+
+
 /**
  *\brief Empty constructor for MissionServer
  *\param nautonomous_operation_action::MissionGoalConstPtr &goal
  *\return
  */
 void MissionServer::executeCB(const nautonomous_operation_action::MissionPlanGoalConstPtr &goal) {
+
 	// helper variables
 	nautonomous_operation_action::MissionPlanFeedback feedback_;
     nautonomous_operation_action::MissionPlanResult result_;
@@ -158,7 +162,7 @@ void MissionServer::executeCB(const nautonomous_operation_action::MissionPlanGoa
 	} else {
 		result_.result.progression = 0;
 		result_.result.status = "Failed pathfinder request";
-
+    
 		// set the action state to succeeded
 		as_.setAborted(result_);
 	}

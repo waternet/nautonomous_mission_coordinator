@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(nautonomous_operation_action)
 
+
 find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs nautonomous_msgs message_generation tf nautonomous_navigation_pathfinder nautonomous_map_cropper)
+
 
 find_package(Boost REQUIRED COMPONENTS system thread) 
 
@@ -11,7 +13,6 @@ add_message_files(
   MissionStatus.msg
   OperationAction.msg
    OperationPlan.msg
-   
 )
 
 

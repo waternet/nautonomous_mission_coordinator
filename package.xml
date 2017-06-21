@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<package>
+<?xml version="1.0"?><package>
   <name>nautonomous_operation_action</name>
   <version>0.0.0</version>
   <description>The nautonomous_operation_action package</description>
@@ -44,7 +43,7 @@
   <build_depend>nautonomous_navigation_pathfinder</build_depend>
   <build_depend>nautonomous_map_cropper</build_depend>
   <build_depend>nautonomous_msgs</build_depend>
-  
+
   <build_depend>roscpp</build_depend>
 
   <build_depend>actionlib_msgs</build_depend>
@@ -58,9 +57,9 @@
 
   <run_depend>message_runtime</run_depend>
   <run_depend>nautonomous_navigation_pathfinder</run_depend>
+
   <run_depend>nautonomous_map_cropper</run_depend>
   <run_depend>nautonomous_msgs</run_depend>
-
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
