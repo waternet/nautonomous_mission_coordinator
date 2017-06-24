@@ -3,23 +3,24 @@
 
 MoveBaseClient::MoveBaseClient() 
 {
-	ac = new MoveBaseActionClient("move_base", true);
+	moveBaseActionClient = new MoveBaseActionClient("move_base", true);
 }
 
 MoveBaseClient::~MoveBaseClient() 
 {
-	if(ac)
+	if(moveBaseActionClient)
 	{
-		delete ac;
+		delete moveBaseActionClient;
 	}
 }
 
-int MoveBaseClient::requestGoal(geometry_msgs::Pose2D pose2d) 
+bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d) 
 {
-	while (!ac->waitForServer(ros::Duration(5.0))) 
+	while (!moveBaseActionClient->waitForServer(ros::Duration(5.0))) 
 	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
+
 	move_base_msgs::MoveBaseGoal goal;
 	
 	//we'll send a goal to the robot to move 1 meter forward
@@ -32,20 +33,24 @@ int MoveBaseClient::requestGoal(geometry_msgs::Pose2D pose2d)
 	goal.target_pose.pose.position.z = 0;
 	
 	//Client publish the wanted orientation of the robot
-	goal.target_pose.pose.orientation.w = std::cos(pose2d.theta * 0.5);
 	goal.target_pose.pose.orientation.x = 0;
 	goal.target_pose.pose.orientation.y = 0;
 	goal.target_pose.pose.orientation.z = std::sin(pose2d.theta * 0.5);
+	goal.target_pose.pose.orientation.w = std::cos(pose2d.theta * 0.5);
 
-	ROS_INFO("Sending goal");
-	ac->sendGoal(goal);
+	moveBaseActionClient->sendGoal(goal);
 
-	ac->waitForResult();
+	moveBaseActionClient->waitForResult();
 
-	if (ac->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+	if (moveBaseActionClient->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+	{
 		ROS_INFO("Hooray, succeeded with moving to the next goal.");
+		return true;
+	}
 	else
+	{
 		ROS_INFO("The base failed to move to the next goal.");
-
-	return 0;
+		return false;
+	}
+	
 }

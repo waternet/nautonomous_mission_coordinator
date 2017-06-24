@@ -41,16 +41,16 @@ add_dependencies(
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 
-add_library(mission_server src/mission_server.cpp)
+add_library(mission_coordinator_server src/mission_coordinator_server.cpp)
 
 
 add_dependencies(
-	mission_server
+	mission_coordinator_server
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 target_link_libraries(move_base_client ${catkin_LIBRARIES} )
-target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_client)
-target_link_libraries(mission_coordinator_node ${catkin_LIBRARIES} move_base_client mission_server)
+target_link_libraries(mission_coordinator_server ${catkin_LIBRARIES} move_base_client)
+target_link_libraries(mission_coordinator_node ${catkin_LIBRARIES} move_base_client mission_coordinator_server)
 
 
 
