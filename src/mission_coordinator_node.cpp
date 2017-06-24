@@ -1,4 +1,4 @@
-#include <nautonomous_mission_coordinator/mission_coordinator.h>
+#include <nautonomous_mission_coordinator/mission_coordinator_node.h>
 
 /**
  *\brief Creates MissionServer (mission_server.cpp) and MoveBaseActionClient (move_base_action_client.cpp). Loops through goals from MissionServer
