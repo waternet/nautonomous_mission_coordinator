@@ -1,35 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(nautonomous_operation_action)
+project(nautonomous_mission_coordinator)
 
 
-find_package(catkin REQUIRED COMPONENTS roscpp actionlib actionlib_msgs geometry_msgs nautonomous_msgs message_generation tf nautonomous_navigation_pathfinder nautonomous_map_cropper)
+find_package(catkin REQUIRED COMPONENTS roscpp actionlib geometry_msgs message_generation tf nautonomous_map_msgs nautonomous_mission_msgs nautonomous_routing_msgs)
 
 
 find_package(Boost REQUIRED COMPONENTS system thread) 
 
-
-add_message_files(
-   FILES
-  MissionStatus.msg
-  OperationAction.msg
-   OperationPlan.msg
-)
-
-
-add_action_files(
-	DIRECTORY action 
-	FILES MissionPlan.action
-)
-
-generate_messages(
-	DEPENDENCIES actionlib_msgs std_msgs geometry_msgs 
-)
-
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS actionlib_msgs message_runtime 
 )
 
 
@@ -44,20 +24,20 @@ include_directories(
 set(CMAKE_CXX_FLAGS "-std=c++11 -L/usr/local/lib ${CMAKE_CXX_FLAGS} -g")
 
 #add executable
-add_executable(operation_manager
-  src/operation_manager.cpp
+add_executable(mission_coordinator_node
+  src/mission_coordinator_node.cpp
 )
 
 add_dependencies(
-	operation_manager
+	mission_coordinator_node
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 
-add_library(move_base_action_client src/move_base_action_client.cpp)
+add_library(move_base_client src/move_base_client.cpp)
 
 
 add_dependencies(
-	move_base_action_client
+	move_base_client
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 
@@ -68,9 +48,9 @@ add_dependencies(
 	mission_server
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(move_base_action_client ${catkin_LIBRARIES} )
-target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_action_client)
-target_link_libraries(operation_manager ${catkin_LIBRARIES} move_base_action_client mission_server)
+target_link_libraries(move_base_client ${catkin_LIBRARIES} )
+target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_client)
+target_link_libraries(mission_coordinator_node ${catkin_LIBRARIES} move_base_client mission_server)
 
 
 
@@ -85,5 +65,5 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
-install(TARGETS operation_manager
+install(TARGETS mission_coordinator_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

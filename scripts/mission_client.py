@@ -7,7 +7,7 @@ import actionlib
 
 # Brings in the messages used by the fibonacci action, including the
 # goal message and the result message.
-import nautonomous_operation_action.msg 
+import nautonomous_mission_msgs.msg 
 from geometry_msgs.msg import Pose2D
 
 initial_pose_pub = None
@@ -17,7 +17,7 @@ manualPath = False
 def mission_plan_client():
     # Creates the SimpleActionClient, passing the type of the action
     # (FibonacciAction) to the constructor.
-    client = actionlib.SimpleActionClient('mission_server', nautonomous_operation_action.msg.MissionPlanAction)
+    client = actionlib.SimpleActionClient('/mission/server', nautonomous_mission_msgs.msg.MissionPlanAction)
 
     # Waits until the action server has started up and started
     # listening for goals.
@@ -35,10 +35,10 @@ def mission_plan_client():
     mac = "mac" 
     token = "token"
     
-    action1 = nautonomous_operation_action.msg.OperationPlan(uuid = None, name = operation_name, path = poses, operationActions = None, automaticPlanning = not manualPath)
+    action1 = nautonomous_mission_msgs.msg.OperationPlan(uuid = None, name = operation_name, path = poses, operationActions = None, automaticPlanning = not manualPath)
     actions = [action1]
 
-    goal = nautonomous_operation_action.msg.MissionPlanGoal(mac = mac, token = token, operationPlan = actions)
+    goal = nautonomous_mission_msgs.msg.MissionPlanGoal(mac = mac, token = token, operationPlan = actions)
 
     # Sends the goal to the action server.
     client.send_goal(goal)

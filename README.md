@@ -1,4 +1,4 @@
-# nautonomous operation action {#nautonomous_operation_action}
+# nautonomous mission coordinator{#nautonomous_mission_coordinator}
 Contains a MissionServer (mission_server.cpp) for generating goals and a MoveBaseActionClient (move_base_action_client.cpp) to move to the goals. (?)
 
 

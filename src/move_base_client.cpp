@@ -1,18 +1,23 @@
 
-#include <../include/nautonomous_operation_action/move_base_action_client.h>
+#include <nautonomous_mission_coordinator/move_base_client.h>
 
-MoveBaseActionClient::MoveBaseActionClient() {
-	ac = new MoveBaseClient("move_base", true);
+MoveBaseClient::MoveBaseClient() 
+{
+	ac = new MoveBaseActionClient("move_base", true);
 }
 
-MoveBaseActionClient::~MoveBaseActionClient() {
-	if(ac){
+MoveBaseClient::~MoveBaseClient() 
+{
+	if(ac)
+	{
 		delete ac;
 	}
 }
 
-int MoveBaseActionClient::requestGoal(geometry_msgs::Pose2D pose2d) {
-	while (!ac->waitForServer(ros::Duration(5.0))) {
+int MoveBaseClient::requestGoal(geometry_msgs::Pose2D pose2d) 
+{
+	while (!ac->waitForServer(ros::Duration(5.0))) 
+	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
 	move_base_msgs::MoveBaseGoal goal;
@@ -32,15 +37,15 @@ int MoveBaseActionClient::requestGoal(geometry_msgs::Pose2D pose2d) {
 	goal.target_pose.pose.orientation.y = 0;
 	goal.target_pose.pose.orientation.z = std::sin(pose2d.theta * 0.5);
 
-	ROS_INFO("Sending goal ");
+	ROS_INFO("Sending goal");
 	ac->sendGoal(goal);
 
 	ac->waitForResult();
 
 	if (ac->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-		ROS_INFO("Hooray, the base moved 1 meter forward");
+		ROS_INFO("Hooray, succeeded with moving to the next goal.");
 	else
-		ROS_INFO("The base failed to move forward 1 meter for some reason");
+		ROS_INFO("The base failed to move to the next goal.");
 
 	return 0;
 }
