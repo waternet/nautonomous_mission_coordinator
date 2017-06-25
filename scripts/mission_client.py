@@ -1,26 +1,21 @@
 #! /usr/bin/env python
-
 import rospy
 
 # Brings in the SimpleActionClient
 import actionlib
 
-# Brings in the messages used by the fibonacci action, including the
-# goal message and the result message.
-import nautonomous_mission_msgs.msg 
 from geometry_msgs.msg import Pose2D
 
-initial_pose_pub = None
+from nautonomous_mission_msgs.msg import MissionPlanAction
 
 manualPath = False
 
 def mission_plan_client():
     # Creates the SimpleActionClient, passing the type of the action
     # (FibonacciAction) to the constructor.
-    client = actionlib.SimpleActionClient('/mission/server', nautonomous_mission_msgs.msg.MissionPlanAction)
+    client = actionlib.SimpleActionClient('/mission/coordinator/server', MissionPlanAction)
 
-    # Waits until the action server has started up and started
-    # listening for goals.
+    # Waits until the action server has started up and started listening for goals.
     client.wait_for_server()
 
     # Creates a goal to send to the action server.
@@ -35,9 +30,11 @@ def mission_plan_client():
     mac = "mac" 
     token = "token"
     
+    # Create actions
     action1 = nautonomous_mission_msgs.msg.OperationPlan(uuid = None, name = operation_name, path = poses, operationActions = None, automaticPlanning = not manualPath)
     actions = [action1]
 
+    # Create goal
     goal = nautonomous_mission_msgs.msg.MissionPlanGoal(mac = mac, token = token, operationPlan = actions)
 
     # Sends the goal to the action server.
@@ -53,11 +50,14 @@ if __name__ == '__main__':
     try:
         # Initializes a rospy node so that the SimpleActionClient can
         # publish and subscribe over ROS.
-        rospy.init_node('mission_plan_client')
+        rospy.init_node('mission_plan_client_node')
         manualPath = rospy.get_param('~ManualOperation', True)
-        print "Manual operation " + str(manualPath)
+
         rospy.sleep(5)
+
+        print("Requesting mission plan to be executed.")
         result = mission_plan_client()
         print("Result:" + str(result.result.progression) + " " + str(result.result.status))
+   
     except rospy.ROSInterruptException:
         print("program interrupted before completion")

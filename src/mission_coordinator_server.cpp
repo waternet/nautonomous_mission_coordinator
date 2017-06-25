@@ -186,7 +186,7 @@ void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs:
 	int operationIndex = 1;
 
 	// For each operation in the mission plan execute the operation.
-	ROS_INFO("Operations size: %i", goal->operationPlan.size());
+	ROS_INFO("Operations size: %i", (int)goal->operationPlan.size());
 	for(std::vector<nautonomous_mission_msgs::OperationPlan>::const_iterator operation_iterator = goal->operationPlan.begin(); operation_iterator != goal->operationPlan.end(); ++operation_iterator)
 	{
 		current_operation = *operation_iterator;

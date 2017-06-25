@@ -17,6 +17,8 @@
 
 #include <nautonomous_routing_msgs/PathfinderVaarkaart.h>
 
+
+
 typedef actionlib::SimpleActionServer<nautonomous_mission_msgs::MissionPlanAction> MissionCoordinatorActionServer;
 
 class MissionCoordinatorServer
@@ -28,8 +30,8 @@ private:
 
   std::vector<geometry_msgs::Pose2D> path;
 
-  std::basic_string<char> image_file_name;
-	std::basic_string<char> config_file_name;
+  std::string image_file_name;
+  std::string config_file_name;
 
   MoveBaseClient moveBase;
   
