@@ -1,8 +1,0 @@
-<launch>
-	  <arg name="ManualOperation" default="True"/>
-
-		<node name="mission_plan_client" pkg="nautonomous_operation_action" type="mission_client.py" output="screen">
-			<param name="ManualOperation" value="$(arg ManualOperation)"/>
-		</node>
-
-</launch>

@@ -6,9 +6,9 @@ import actionlib
 
 from geometry_msgs.msg import Pose2D
 
-from nautonomous_mission_msgs.msg import MissionPlanAction
+from nautonomous_mission_msgs.msg import MissionPlanAction, OperationPlan, MissionPlanGoal
 
-manualPath = False
+manual_routing = False
 
 def mission_plan_client():
     # Creates the SimpleActionClient, passing the type of the action
@@ -20,22 +20,22 @@ def mission_plan_client():
 
     # Creates a goal to send to the action server.
     operation_name = ""
-    if manualPath: 
-        poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
+    if manual_routing: 
+        route_poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
         operation_name = "coenhaven"
     else:
-        poses = [Pose2D(628777, 5804903, 0), Pose2D(629444, 5803420, 0)]
+        route_poses = [Pose2D(628777, 5804903, 0), Pose2D(629444, 5803420, 0)]
         operation_name = "canals"
 
     mac = "mac" 
     token = "token"
     
     # Create actions
-    action1 = nautonomous_mission_msgs.msg.OperationPlan(uuid = None, name = operation_name, path = poses, operationActions = None, automaticPlanning = not manualPath)
-    actions = [action1]
+    operation1 = OperationPlan(uuid = None, name = operation_name, route = route_poses, actions = None, automatic_routing = not manual_routing)
+    operations = [operation1]
 
     # Create goal
-    goal = nautonomous_mission_msgs.msg.MissionPlanGoal(mac = mac, token = token, operationPlan = actions)
+    goal = MissionPlanGoal(mac = mac, token = token, operations = operations)
 
     # Sends the goal to the action server.
     client.send_goal(goal)
@@ -51,9 +51,9 @@ if __name__ == '__main__':
         # Initializes a rospy node so that the SimpleActionClient can
         # publish and subscribe over ROS.
         rospy.init_node('mission_plan_client_node')
-        manualPath = rospy.get_param('~ManualOperation', True)
+        manual_routing = rospy.get_param('~manual_routing', True)
 
-        rospy.sleep(5)
+        rospy.sleep(1)
 
         print("Requesting mission plan to be executed.")
         result = mission_plan_client()

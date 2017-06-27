@@ -7,12 +7,14 @@
  *\return MissionCoordinatorServer
  */
 MissionCoordinatorServer::MissionCoordinatorServer(ros::NodeHandle node_handle, std::string name) :
-		missionCoordinatorActionServer(node_handle, name.c_str(), boost::bind(&MissionCoordinatorServer::coordinateMission, this, _1),
+		mission_coordinator_action_server_(node_handle, name.c_str(), boost::bind(&MissionCoordinatorServer::coordinateMission, this, _1),
 				false) 
 {
-	missionCoordinatorActionServer.start();
+	mission_coordinator_action_server_.start();
 
-	nh = node_handle;
+	node_handle_ = node_handle;
+
+	move_base_client_ = new MoveBaseClient();
 }
 
 /**
@@ -22,43 +24,40 @@ MissionCoordinatorServer::MissionCoordinatorServer(ros::NodeHandle node_handle, 
  */
 MissionCoordinatorServer::~MissionCoordinatorServer(void) 
 {
+	if(move_base_client_){
+		delete move_base_client_;
+	}
 }
 
 /**
  *\brief Coordinate Routing from the Vaarkaart using a service request
- *\param std::vector<geometry_msgs::Pose2D> &path, nautonomous_mission_msgs::OperationPlan current_operation
+ *\param std::vector<geometry_msgs::Pose2D> &path, nautonomous_mission_msgs::OperationPlan current_operation_
  *\return success
  */
 bool MissionCoordinatorServer::coordinateRoutingVaarkaart()
 {
-	ROS_INFO("Starting path assembly ... ");
-	path.clear();
+	route_.clear();
 	//If the operation should be automatically planned, we use the vaarkaart to do so.
-	if(current_operation.automaticPlanning)
+	if(current_operation_.automatic_routing)
 	{
-		ROS_INFO("\tAutomatic Planning initiated...");
 		//Create routing request for the vaarkaart.
-		nautonomous_routing_msgs::PathfinderVaarkaart vaarkaart_srv;
-		vaarkaart_srv.request.goalEasting = current_operation.path[1].x;
-		vaarkaart_srv.request.goalNorthing = current_operation.path[1].y;
-		vaarkaart_srv.request.testStartEasting = current_operation.path[0].x;
-		vaarkaart_srv.request.testStartNorthing = current_operation.path[0].y;
-
-		ROS_INFO("\tPerforming pathfinder request...");	
+		nautonomous_routing_msgs::Routing routing_srv;
+		routing_srv.request.start = current_operation_.route[0];
+		routing_srv.request.destination = current_operation_.route[1];
+	
 		// Create the routing 
-		ros::ServiceClient vaarkaart_client = nh.serviceClient<nautonomous_routing_msgs::PathfinderVaarkaart>("/routing/vaarkaart/request");	
-		if(vaarkaart_client.call(vaarkaart_srv)) 
+		ros::ServiceClient vaarkaart_client = node_handle_.serviceClient<nautonomous_routing_msgs::Routing>("/routing/vaarkaart/routing");	
+		if(vaarkaart_client.call(routing_srv)) 
 		{
-			// Copy the path from the pathfinder to the path vector	
-			int pathIndex = 1;
-			for(std::vector<geometry_msgs::Pose2D>::const_iterator path_iterator = vaarkaart_srv.response.pathLocations.begin(); path_iterator != vaarkaart_srv.response.pathLocations.end(); ++path_iterator)
+			// Copy the path from the routing to the path vector	
+			for(std::vector<geometry_msgs::Pose2D>::const_iterator route_iterator = routing_srv.response.route.begin(); route_iterator != routing_srv.response.route.end(); ++route_iterator)
 			{
-				path.push_back(*path_iterator);
+				route_.push_back(*route_iterator);
 			}
 		} 
 		else 
 		{
-			ROS_ERROR("Failed request for path finder");
+			ROS_ERROR("Failed request for routing");
 			return false;
 		}
 	} 
@@ -66,37 +65,33 @@ bool MissionCoordinatorServer::coordinateRoutingVaarkaart()
 	// We do not have to plan automatically and assume the action path is already the correct final path.
 	{
 		// Copy the path from the action to the path vector	
-		int pathIndex = 1;
-		for(std::vector<geometry_msgs::Pose2D>::const_iterator path_iterator = current_operation.path.begin(); path_iterator != current_operation.path.end(); ++path_iterator)
+		for(std::vector<geometry_msgs::Pose2D>::const_iterator route_iterator = current_operation_.route.begin(); route_iterator != current_operation_.route.end(); ++route_iterator)
 		{
-			path.push_back(*path_iterator);
+			route_.push_back(*route_iterator);
 		}
 	}
-	ROS_INFO("... finished path assembly correctly.");
+
 	return true;
 }
 
 /**
  *\brief Coordinate map cropping
- *\param std::vector<geometry_msgs::Pose2D> &path, std::basic_string<char> &image_file_name, std::basic_string<char> &config_file_name
+ *\param std::vector<geometry_msgs::Pose2D> &path, std::basic_string<char> &image_name, std::basic_string<char> &config_name
  *\return success
  */
 bool MissionCoordinatorServer::coordinateMapCropping()
 {
 	// Create a map cropping service request
-	nautonomous_map_msgs::CropMapPoints map_cropper_srv;
-	map_cropper_srv.request.pathLocations = path;
-	map_cropper_srv.request.operation_name = current_operation.name;
+	nautonomous_map_msgs::Crop crop_srv;
+	crop_srv.request.route = route_;
+	crop_srv.request.name = current_operation_.name;
 
-	ROS_INFO("Calling map cropper ... ");
 	// Execute map cropping service call
-	ros::ServiceClient map_cropper_client = nh.serviceClient<nautonomous_map_msgs::CropMapPoints>("/map/crop/request");
-	if(map_cropper_client.call(map_cropper_srv))
+	ros::ServiceClient map_cropper_client = node_handle_.serviceClient<nautonomous_map_msgs::Crop>("/map/cropper/crop");
+	if(map_cropper_client.call(crop_srv))
 	{
-		image_file_name = map_cropper_srv.response.image_file_name;
-		config_file_name = map_cropper_srv.response.config_file_name;
-
-		ROS_INFO("\tCreated new map called %s %s", image_file_name.c_str(), config_file_name.c_str());
+		image_name_ = crop_srv.response.image_name;
+		config_name_ = crop_srv.response.config_name;
 	} 
 	else 
 	{
@@ -104,29 +99,31 @@ bool MissionCoordinatorServer::coordinateMapCropping()
 		return false;
 	}
 
-	ROS_INFO("... finished map cropper correctly.");
 	return true;
 }
 
 /**
  *\brief Coordinate map server
- *\param std::basic_string<char> &image_file_name, std::basic_string<char> &config_file_name
+ *\param std::basic_string<char> &image_name, std::basic_string<char> &config_name
  *\return success
  */
 bool MissionCoordinatorServer::coordinateMapServer()
 {
 	// Create a map server service request
-	nautonomous_map_msgs::MapLoader map_server_srv;
-	map_server_srv.request.image_file_name = image_file_name;
-	map_server_srv.request.config_file_name = config_file_name;
-	ROS_INFO("Calling map server ... %s %s", map_server_srv.request.image_file_name.c_str(), map_server_srv.request.config_file_name.c_str());
-	
+	nautonomous_map_msgs::Load load_srv;
+	load_srv.request.image_name = image_name_;
+	load_srv.request.config_name = config_name_;
+
 	// Execute map server request
-	ros::ServiceClient map_server_client = nh.serviceClient<nautonomous_map_msgs::MapLoader>("/map/server/load");
-	if(map_server_client.call(map_server_srv))
+	ros::ServiceClient map_server_client = node_handle_.serviceClient<nautonomous_map_msgs::Load>("/map/server/load");
+	if(map_server_client.call(load_srv))
 	{
-		std::basic_string<char> status = map_server_srv.response.status;
-		ROS_INFO("\tLoaded new map with status %s", status.c_str());
+		std::string status = load_srv.response.status;
+		if(!status.compare("Ok"))
+		{
+			ROS_ERROR("Failed execution for map server");
+			return false;
+		}
 	} 
 	else 
 	{
@@ -134,7 +131,6 @@ bool MissionCoordinatorServer::coordinateMapServer()
 		return false;
 	}
 
-	ROS_INFO("... finished map server correctly.");
 	return true;
 }
 
@@ -145,22 +141,18 @@ bool MissionCoordinatorServer::coordinateMapServer()
  */
 bool MissionCoordinatorServer::coordinateMoveBaseGoal()
 {
-	ROS_INFO("Calling move base client ...");
-	int numPath = path.size();
-	
-	for(int pathIndex = 0; pathIndex < numPath; pathIndex++)
+	int route_size = route_.size();
+	for(int route_index = 0; route_index < route_size; route_index++)
 	{
-
-		ROS_INFO("\tRoute index: %i", pathIndex);
-		if(!moveBase.requestGoal(path.at(pathIndex)))
+		if(!move_base_client_->requestGoal(route_.at(route_index)))
 		{
 			return false;
 		}
 
 		// Publish the current progression.
-		missionPlanFeedback.feedback.progression = (int) ((pathIndex+1)/numPath); //arbitrary value for now TODO
-		missionPlanFeedback.feedback.status = "Ok";
-		missionCoordinatorActionServer.publishFeedback(missionPlanFeedback);
+		mission_plan_feedback_.feedback.progression = (int) ((route_index + 1) / route_size); //arbitrary value for now TODO
+		mission_plan_feedback_.feedback.status = "Ok";
+		mission_coordinator_action_server_.publishFeedback(mission_plan_feedback_);
 
 		ros::spinOnce();
 	
@@ -176,45 +168,39 @@ bool MissionCoordinatorServer::coordinateMoveBaseGoal()
  */
 void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal) 
 {
-	ROS_INFO("Mission Server callback");
 	//Check token: TODO
 	//authenticate
 
-    moveBase = MoveBaseClient();
-
 	bool success = true;
-	int operationIndex = 1;
 
 	// For each operation in the mission plan execute the operation.
-	ROS_INFO("Operations size: %i", (int)goal->operationPlan.size());
-	for(std::vector<nautonomous_mission_msgs::OperationPlan>::const_iterator operation_iterator = goal->operationPlan.begin(); operation_iterator != goal->operationPlan.end(); ++operation_iterator)
+	for(std::vector<nautonomous_mission_msgs::OperationPlan>::const_iterator operation_pointer = goal->operations.begin(); operation_pointer != goal->operations.end(); ++operation_pointer)
 	{
-		current_operation = *operation_iterator;
-		ROS_INFO("Operation: %i", operationIndex++);
+		current_operation_ = *operation_pointer;
 
 		//Mission Planner
-		if(coordinateRoutingVaarkaart())
+		if(!coordinateRoutingVaarkaart())
 		{
 			success = false;
 			break;
 		}
 
 		//Cropper
-		if(coordinateMapCropping())
+		if(!coordinateMapCropping())
 		{
 			success = false;
 			break;
 		}
 
 		//Map Server
-		if(coordinateMapServer())
+		if(!coordinateMapServer())
 		{
 			success = false;
 			break;
 		}
 
 		// Request goals using move base navigation stack
-		if(coordinateMoveBaseGoal())
+		if(!coordinateMoveBaseGoal())
 		{
 			success = false;
 			break;
@@ -225,16 +211,17 @@ void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs:
 	// Return the progress and status for both success and failed action.
 	if (success) 
 	{
-		missionPlanResult.result.progression = 100;
-		missionPlanResult.result.status = missionPlanFeedback.feedback.status;
+		mission_plan_result_.result.progression = 100;
+		mission_plan_result_.result.status = mission_plan_feedback_.feedback.status;
 		// Set the action state to succeeded
-		missionCoordinatorActionServer.setSucceeded(missionPlanResult);
+		mission_coordinator_action_server_.setSucceeded(mission_plan_result_);
 	} 
 	else 
 	{
-		missionPlanResult.result.progression = 0;
-		missionPlanResult.result.status = "Failed coordinating mission request";
+		//TODO correct progression calculation
+		mission_plan_result_.result.progression = 0;
+		mission_plan_result_.result.status = "Failed coordinating mission request";
 		// Set the action state to aborted
-		missionCoordinatorActionServer.setAborted(missionPlanResult);
+		mission_coordinator_action_server_.setAborted(mission_plan_result_);
 	}
 }

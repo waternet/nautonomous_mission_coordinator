@@ -3,22 +3,22 @@
 
 MoveBaseClient::MoveBaseClient() 
 {
-	moveBaseActionClient = new MoveBaseActionClient("move_base", true);
+	move_base_action_client_ = new MoveBaseActionClient("move_base", true);
 }
 
 MoveBaseClient::~MoveBaseClient() 
 {
-	if(moveBaseActionClient)
+	if(move_base_action_client_)
 	{
-		delete moveBaseActionClient;
+		delete move_base_action_client_;
 	}
 }
 
 bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d) 
 {
-	while (!moveBaseActionClient->waitForServer(ros::Duration(5.0))) 
+	while (!move_base_action_client_->waitForServer(ros::Duration(5.0))) 
 	{
-		ROS_INFO("Waiting for the move_base action server to come up");
+		ROS_ERROR("Waiting for the move_base action server to come up");
 	}
 
 	move_base_msgs::MoveBaseGoal goal;
@@ -38,19 +38,11 @@ bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d)
 	goal.target_pose.pose.orientation.z = std::sin(pose2d.theta * 0.5);
 	goal.target_pose.pose.orientation.w = std::cos(pose2d.theta * 0.5);
 
-	moveBaseActionClient->sendGoal(goal);
+	ROS_INFO("Sending goal");
+	move_base_action_client_->sendGoal(goal);
 
-	moveBaseActionClient->waitForResult();
+	move_base_action_client_->waitForResult();
 
-	if (moveBaseActionClient->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-	{
-		ROS_INFO("Hooray, succeeded with moving to the next goal.");
-		return true;
-	}
-	else
-	{
-		ROS_INFO("The base failed to move to the next goal.");
-		return false;
-	}
+	return (move_base_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
 	
 }

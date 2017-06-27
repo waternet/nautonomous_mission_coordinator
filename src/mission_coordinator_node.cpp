@@ -1,4 +1,8 @@
-#include <nautonomous_mission_coordinator/mission_coordinator_node.h>
+#include <ros/ros.h>
+
+#include <std_msgs/Int32.h>
+
+#include <nautonomous_mission_coordinator/mission_coordinator_server.h>
 
 /**
  *\brief Creates MissionServer (mission_server.cpp) and MoveBaseActionClient (move_base_action_client.cpp). Loops through goals from MissionServer
@@ -6,14 +10,10 @@
 int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "mission_coordinator_node");
-	ros::NodeHandle nh;
-
-	// Map server
-	ros::Publisher pub_new_map = nh.advertise<std_msgs::Int32>("/map/cropper/new_map", 5);
+	ros::NodeHandle node_handle;
 
 	/* Autonomous */
-	MissionCoordinatorServer missionCoordinatorServer(nh,"/mission/coordinator/server");
+	MissionCoordinatorServer mission_coordinator_server(node_handle, "/mission/coordinator/server");
 	
 	ros::spin();
-
 }

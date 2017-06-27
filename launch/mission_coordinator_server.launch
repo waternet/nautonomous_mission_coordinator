@@ -4,6 +4,6 @@
 		<arg name="simulate" default="true"/>
 		<param name="simulate" value="$(arg simulate)"/>
 
-	<node name="mission_coordinator_manager" pkg="nautonomous_mission_coordinator" type="mission_coordinator" output="screen"/>
+	<node name="mission_coordinator_manager" pkg="nautonomous_mission_coordinator" type="mission_coordinator_node" output="screen"/>
 
 </launch>

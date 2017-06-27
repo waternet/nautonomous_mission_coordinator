@@ -3,42 +3,41 @@
 
 #include <vector>
 
-#include "ros/ros.h"
+#include <ros/ros.h>
 
 #include <actionlib/server/simple_action_server.h>
 
 #include <geometry_msgs/Pose2D.h>
 
-#include <nautonomous_map_msgs/CropMapPoints.h>
-#include <nautonomous_map_msgs/MapLoader.h>
+#include <nautonomous_map_msgs/Crop.h>
+#include <nautonomous_map_msgs/Load.h>
 
-#include <nautonomous_mission_coordinator/move_base_client.h>
 #include <nautonomous_mission_msgs/MissionPlanAction.h>
 
-#include <nautonomous_routing_msgs/PathfinderVaarkaart.h>
+#include <nautonomous_routing_msgs/Routing.h>
 
-
+#include <nautonomous_mission_coordinator/move_base_client.h>
 
 typedef actionlib::SimpleActionServer<nautonomous_mission_msgs::MissionPlanAction> MissionCoordinatorActionServer;
 
 class MissionCoordinatorServer
 {
 private:
-  ros::NodeHandle nh;
+  ros::NodeHandle node_handle_;
 
-  MissionCoordinatorActionServer missionCoordinatorActionServer;
+  MissionCoordinatorActionServer mission_coordinator_action_server_;
 
-  std::vector<geometry_msgs::Pose2D> path;
+  std::vector<geometry_msgs::Pose2D> route_;
 
-  std::string image_file_name;
-  std::string config_file_name;
+  std::string image_name_;
+  std::string config_name_;
 
-  MoveBaseClient moveBase;
+  MoveBaseClient* move_base_client_;
   
-  nautonomous_mission_msgs::MissionPlanFeedback missionPlanFeedback;
-  nautonomous_mission_msgs::MissionPlanResult missionPlanResult;
+  nautonomous_mission_msgs::MissionPlanFeedback mission_plan_feedback_;
+  nautonomous_mission_msgs::MissionPlanResult mission_plan_result_;
 
-  nautonomous_mission_msgs::OperationPlan current_operation;
+  nautonomous_mission_msgs::OperationPlan current_operation_;
 
 public:
   MissionCoordinatorServer(ros::NodeHandle node_handle, std::string name);
