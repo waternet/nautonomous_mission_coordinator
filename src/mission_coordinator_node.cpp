@@ -11,9 +11,10 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "mission_coordinator_node");
 	ros::NodeHandle node_handle;
+	ros::NodeHandle node_private_handle;
 
 	/* Autonomous */
-	MissionCoordinatorServer mission_coordinator_server(node_handle, "/mission/coordinator/server");
+	MissionCoordinatorServer mission_coordinator_server(node_handle, node_private_handle, "coordinator_mission_action_server");
 	
 	ros::spin();
 }

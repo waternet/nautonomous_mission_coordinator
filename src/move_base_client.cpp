@@ -3,7 +3,7 @@
 
 MoveBaseClient::MoveBaseClient() 
 {
-	move_base_action_client_ = new MoveBaseActionClient("move_base", true);
+	move_base_action_client_ = new MoveBaseActionClient("move_base_action", true);
 }
 
 MoveBaseClient::~MoveBaseClient() 
@@ -11,6 +11,7 @@ MoveBaseClient::~MoveBaseClient()
 	if(move_base_action_client_)
 	{
 		delete move_base_action_client_;
+		move_base_action_client_ = nullptr;
 	}
 }
 
@@ -24,7 +25,7 @@ bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d)
 	move_base_msgs::MoveBaseGoal goal;
 	
 	//we'll send a goal to the robot to move 1 meter forward
-	goal.target_pose.header.frame_id = "odom_combined";
+	goal.target_pose.header.frame_id = "odom";
 	goal.target_pose.header.stamp = ros::Time::now();
 	
 	//Client publish the wanted position of the robot
@@ -38,7 +39,6 @@ bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d)
 	goal.target_pose.pose.orientation.z = std::sin(pose2d.theta * 0.5);
 	goal.target_pose.pose.orientation.w = std::cos(pose2d.theta * 0.5);
 
-	ROS_INFO("Sending goal");
 	move_base_action_client_->sendGoal(goal);
 
 	move_base_action_client_->waitForResult();

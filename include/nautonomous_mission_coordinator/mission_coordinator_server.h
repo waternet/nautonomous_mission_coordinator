@@ -14,7 +14,7 @@
 
 #include <nautonomous_mission_msgs/MissionPlanAction.h>
 
-#include <nautonomous_routing_msgs/Routing.h>
+#include <nautonomous_routing_msgs/Route.h>
 
 #include <nautonomous_mission_coordinator/move_base_client.h>
 
@@ -29,8 +29,11 @@ private:
 
   std::vector<geometry_msgs::Pose2D> route_;
 
-  std::string image_name_;
   std::string config_name_;
+
+  bool routing_enabled_;
+  bool map_enabled_;
+  bool navigate_enabled_;
 
   MoveBaseClient* move_base_client_;
   
@@ -40,7 +43,7 @@ private:
   nautonomous_mission_msgs::OperationPlan current_operation_;
 
 public:
-  MissionCoordinatorServer(ros::NodeHandle node_handle, std::string name);
+  MissionCoordinatorServer(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle, std::string name);
   ~MissionCoordinatorServer();
 
     /**
@@ -51,14 +54,14 @@ public:
   bool coordinateRoutingVaarkaart();
   /**
   *\brief Coordinate map cropping
-  *\param std::basic_string<char> &image_file_name, std::basic_string<char> &config_file_name
+  *\param std::basic_string<char> &config_file_name
   *\return success
   */
   bool coordinateMapCropping();
 
   /**
   *\brief Coordinate map server
-  *\param std::basic_string<char> &image_file_name, std::basic_string<char> &config_file_name
+  *\param std::basic_string<char> &config_file_name
   *\return success
   */
   bool coordinateMapServer();
