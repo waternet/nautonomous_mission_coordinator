@@ -21,9 +21,10 @@ def mission_plan_client():
     # Creates a goal to send to the action server.
     if operation_name == "coenhaven": 
         route_poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
-    else if operation_name == "canals":
+    elif operation_name == "canals":
         route_poses = [Pose2D(628777, 5804903, 0), Pose2D(629444, 5803420, 0)]
-
+    elif operation_name == "coenhaven_dry_dock":
+        rout_poses = [Pose2D(626737, 5807621, 0), Pose2D(626742, 5807627, 0), Pose2D(626735, 5807632, 0), Pose2D(626730, 5807625, 0), Pose2D(626737, 5807621, 0)]
     mac = "mac" 
     token = "token"
     
@@ -31,7 +32,7 @@ def mission_plan_client():
         return "Error route too short"
 
     # Create actions
-    operation1 = OperationPlan(uuid = None, name = operation_name, route = route_poses, actions = None, automatic_routing = not manual_routing)
+    operation1 = OperationPlan(uuid = None, name = operation_name, route = route_poses, actions = None, automatic_routing = (len(route_poses) <= 2)?(true):(false))
     operations = [operation1]
 
     # Create goal
@@ -51,7 +52,7 @@ if __name__ == '__main__':
         # Initializes a rospy node so that the SimpleActionClient can
         # publish and subscribe over ROS.
         rospy.init_node('mission_plan_client_node')
-        operation_name = rospy.get_param('~operation_name', "coenhaven")
+        operation_name = rospy.get_param('~operation_name_param', "coenhaven")
 
         rospy.sleep(5)
 
