@@ -25,7 +25,7 @@ bool MoveBaseClient::requestGoal(const geometry_msgs::Pose2D pose2d)
 	move_base_msgs::MoveBaseGoal goal;
 	
 	//we'll send a goal to the robot to move 1 meter forward
-	goal.target_pose.header.frame_id = "odom";
+	goal.target_pose.header.frame_id = "odom_combined";
 	goal.target_pose.header.stamp = ros::Time::now();
 	
 	//Client publish the wanted position of the robot
