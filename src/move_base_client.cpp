@@ -3,7 +3,7 @@
 
 MoveBaseClient::MoveBaseClient() 
 {
-	move_base_action_client_ = new MoveBaseActionClient("move_base_action", true);
+	move_base_action_client_ = new MoveBaseActionClient("move_base", true);
 }
 
 MoveBaseClient::~MoveBaseClient() 

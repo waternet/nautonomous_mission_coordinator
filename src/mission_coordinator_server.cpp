@@ -42,6 +42,7 @@ MissionCoordinatorServer::~MissionCoordinatorServer(void)
 bool MissionCoordinatorServer::coordinateRoutingVaarkaart()
 {
 	route_.clear();
+	ROS_INFO("Coordinate Routing Vaarkaart");
 	//If the operation should be automatically planned, we use the vaarkaart to do so.
 	if(current_operation_.automatic_routing)
 	{
@@ -86,6 +87,8 @@ bool MissionCoordinatorServer::coordinateRoutingVaarkaart()
  */
 bool MissionCoordinatorServer::coordinateMapCropping()
 {
+	ROS_INFO("Coordinate Map Cropping");
+	
 	// Create a map cropping service request
 	nautonomous_map_msgs::Crop crop_srv;
 	crop_srv.request.route = route_;
@@ -112,7 +115,9 @@ bool MissionCoordinatorServer::coordinateMapCropping()
  *\return success
  */
 bool MissionCoordinatorServer::coordinateMapServer()
-{
+{	
+	ROS_INFO("Coordinate Map Server");
+
 	// Create a map server service request
 	nautonomous_map_msgs::Load load_srv;
 	load_srv.request.config_name = config_name_;
@@ -140,6 +145,7 @@ bool MissionCoordinatorServer::coordinateMapServer()
  */
 bool MissionCoordinatorServer::coordinateMoveBaseGoal()
 {
+	ROS_INFO("Coordinate Move Base");
 	int route_size = route_.size();
 	for(int route_index = 0; route_index < route_size; route_index++)
 	{
@@ -166,7 +172,8 @@ bool MissionCoordinatorServer::coordinateMoveBaseGoal()
  *\return
  */
 void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal) 
-{
+{	
+	ROS_INFO("Coordinate Mission begin");
 	//Check token: TODO
 	//authenticate
 
@@ -205,8 +212,8 @@ void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs:
 			break;
 		}	
 
-	}
-
+	}	
+	ROS_INFO("Coordinate Mission end");
 	// Return the progress and status for both success and failed action.
 	if (success) 
 	{
