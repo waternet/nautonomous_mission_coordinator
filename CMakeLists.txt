@@ -23,7 +23,6 @@ include_directories(
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -L/usr/local/lib ${CMAKE_CXX_FLAGS} -g")
 
-#add executable
 add_executable(mission_coordinator_node
   src/mission_coordinator_node.cpp
 )
@@ -41,24 +40,16 @@ add_dependencies(
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 
-add_library(mission_server src/mission_server.cpp)
+add_library(mission_coordinator_server src/mission_coordinator_server.cpp)
 
 
 add_dependencies(
-	mission_server
+	mission_coordinator_server
 	${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )
 target_link_libraries(move_base_client ${catkin_LIBRARIES} )
-target_link_libraries(mission_server ${catkin_LIBRARIES} move_base_client)
-target_link_libraries(mission_coordinator_node ${catkin_LIBRARIES} move_base_client mission_server)
-
-
-
-#add gtest
-#if(CATKIN_ENABLE_TESTING)
-#catkin_add_gtest(sabertooth_test test/sabertooth_test_node.cpp)
-#target_link_libraries(socket_test ${catkin_LIBRARIES})
-#endif()
+target_link_libraries(mission_coordinator_server ${catkin_LIBRARIES} move_base_client)
+target_link_libraries(mission_coordinator_node ${catkin_LIBRARIES} move_base_client mission_coordinator_server)
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

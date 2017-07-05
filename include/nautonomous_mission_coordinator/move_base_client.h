@@ -13,22 +13,18 @@
 #include <actionlib/client/simple_action_client.h>
 
 #include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/Quaternion.h>
 
 #include <move_base_msgs/MoveBaseAction.h>
-
-#include <nautonomous_mission_msgs/MissionPlanAction.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseActionClient;
 
 class MoveBaseClient{
 private:
-	MoveBaseActionClient *ac;
+	MoveBaseActionClient* move_base_action_client_;
 public:
 	MoveBaseClient();
 	~MoveBaseClient();
-	int requestGoal(geometry_msgs::Pose2D pose2d);
+	bool requestGoal(const geometry_msgs::Pose2D pose2d);
 };
 
 #endif /* MOVEBASEACTION_H_ */
