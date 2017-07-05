@@ -23,7 +23,8 @@ def mission_plan_client():
     route_poses = []
     # Creates a goal to send to the action server.
     if operation_name == "coenhaven": 
-        route_poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
+        #route_poses = [Pose2D(626748, 5807649, 0), Pose2D(626765, 5807638, 0), Pose2D(626776, 5807655, 0), Pose2D(626759, 5807666, 0)]
+	route_poses = [Pose2D(626759, 5807666, 0), Pose2D(626776, 5807655, 0), Pose2D(626765, 5807638, 0), Pose2D(626748, 5807649, 0)]
     elif operation_name == "canals":
         route_poses = [Pose2D(628777, 5804903, 0), Pose2D(629444, 5803420, 0)]
     elif operation_name == "coenhaven_dry_dock":
