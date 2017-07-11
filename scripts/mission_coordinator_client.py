@@ -31,7 +31,9 @@ def mission_plan_client():
         route_poses = [Pose2D(626737, 5807621, 0), Pose2D(626742, 5807627, 0), Pose2D(626735, 5807632, 0), Pose2D(626730, 5807625, 0), Pose2D(626737, 5807621, 0)]
     elif operation_name == "handhaving":
         route_poses = [Pose2D(628976, 5806012, 0), Pose2D(628254, 5804525,0), Pose2D(628861, 5802994, 0), Pose2D(628787, 5802587, 0)]
-    
+    elif operation_name == "amsterdam_test":
+        route_poses = [Pose2D(10, 10, 0), Pose2D(-10, 10,0), Pose2D(-10, -10, 0), Pose2D(10, -10, 0)]
+
     mac = "mac" 
     token = "token"
     
