@@ -33,7 +33,7 @@ private:
 
   bool routing_enabled_;
   bool map_enabled_;
-  bool navigate_enabled_;
+  bool planner_enabled_;
 
   MoveBaseClient* move_base_client_;
   
