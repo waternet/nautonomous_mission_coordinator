@@ -39,8 +39,9 @@ def mission_plan_client():
         return "Error route too short"
 	
     automatic_routing = False
+    
     if len(route_poses) <= 2:
-	automatic_routing = True
+	    automatic_routing = True
 
     # Create actions
     operation1 = OperationPlan(uuid = None, name = operation_name, route = route_poses, actions = None, automatic_routing = automatic_routing)
