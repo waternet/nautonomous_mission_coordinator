@@ -2,8 +2,10 @@
 #define MISSIONSERVER_H_
 
 #include <vector>
+#include <string> 
 
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <actionlib/server/simple_action_server.h>
 
@@ -28,12 +30,13 @@ private:
   MissionCoordinatorActionServer mission_coordinator_action_server_;
 
   std::vector<geometry_msgs::Pose2D> route_;
+  std::vector<int> route_ids_;
 
   std::string config_name_;
 
   bool routing_enabled_;
   bool map_enabled_;
-  bool navigate_enabled_;
+  bool planner_enabled_;
 
   MoveBaseClient* move_base_client_;
   
@@ -51,35 +54,42 @@ public:
   *\param std::vector<geometry_msgs::Pose2D> &path
   *\return success
   */
-  bool coordinateRoutingVaarkaart();
+  bool requestVaarkaartRoute();
   /**
   *\brief Coordinate map cropping
   *\param std::basic_string<char> &config_file_name
   *\return success
   */
-  bool coordinateMapCropping();
+  bool requestCropMap();
 
   /**
   *\brief Coordinate map server
   *\param std::basic_string<char> &config_file_name
   *\return success
   */
-  bool coordinateMapServer();
+  bool requestGlobalMap();
+
+  bool requestSegmentMap(int route_id);
 
   /**
   *\brief Coordinate move base goal
   *\param std::vector<geometry_msgs::Pose2D> &path
   *\return success
   */
-  bool coordinateMoveBaseGoal();
+  bool requestMoveBaseGoals();
+
+  bool requestMoveBaseGoal(int route_index);
 
   /**
   *\brief Empty constructor for MissionCoordinator
   *\param nautonomous_operation_action::MissionGoalConstPtr &goal
   *\return
   */
-  void coordinateMission(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal);
+  void processMissionPlanGoal(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal);
 
+  bool customRoutingCoordination();
+
+  bool automaticRoutingCoordination();
 };
 
 #endif /* MISSIONSERVER_H_ */

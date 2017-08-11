@@ -7,7 +7,7 @@
  *\return MissionCoordinatorServer
  */
 MissionCoordinatorServer::MissionCoordinatorServer(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle, std::string name) :
-		mission_coordinator_action_server_(node_handle, name.c_str(), boost::bind(&MissionCoordinatorServer::coordinateMission, this, _1),
+		mission_coordinator_action_server_(node_handle, name.c_str(), boost::bind(&MissionCoordinatorServer::processMissionPlanGoal, this, _1),
 				false) 
 {
 	mission_coordinator_action_server_.start();
@@ -16,13 +16,15 @@ MissionCoordinatorServer::MissionCoordinatorServer(ros::NodeHandle node_handle, 
 
 	private_node_handle.param("routing_enabled", routing_enabled_, false);
 	private_node_handle.param("map_enabled", map_enabled_, false);
-	private_node_handle.param("navigate_enabled", navigate_enabled_, true);
+	private_node_handle.param("planner_enabled", planner_enabled_, false);
+
+	ROS_INFO("MCS: routing %i, map %i, planner %i", routing_enabled_, map_enabled_, planner_enabled_);
 
 	move_base_client_ = new MoveBaseClient();
 }
 
 /**
- *\brief Empty constructor for MissionCoordinatorServer
+ *\brief Empty deconstructor for MissionCoordinatorServer
  *\param 
  *\return MissionCoordinatorServer
  */
@@ -36,102 +38,138 @@ MissionCoordinatorServer::~MissionCoordinatorServer(void)
 
 /**
  *\brief Coordinate Routing from the Vaarkaart using a service request
- *\param std::vector<geometry_msgs::Pose2D> &path, nautonomous_mission_msgs::OperationPlan current_operation_
  *\return success
  */
-bool MissionCoordinatorServer::coordinateRoutingVaarkaart()
-{
-	route_.clear();
-	ROS_INFO("Coordinate Routing Vaarkaart");
+bool MissionCoordinatorServer::requestVaarkaartRoute()
+{	
 	//If the operation should be automatically planned, we use the vaarkaart to do so.
-	if(current_operation_.automatic_routing)
-	{
-		//Create routing request for the vaarkaart.
-		nautonomous_routing_msgs::Route route_srv;
-		route_srv.request.start = current_operation_.route[0];
-		route_srv.request.destination = current_operation_.route[1];
+	if(!routing_enabled_)
+	{	
+		ROS_ERROR("MCS: Wanted to schedule automatic routing, however the routing is disabled.");
+		return false;
+	}
+	ROS_INFO("MCS: Request Vaarkaart route");
 
-		// Create the routing 
-		ros::ServiceClient vaarkaart_client = node_handle_.serviceClient<nautonomous_routing_msgs::Route>("route_service");	
-		if(vaarkaart_client.call(route_srv)) 
-		{
-			// Copy the path from the routing to the path vector	
-			for(std::vector<geometry_msgs::Pose2D>::const_iterator route_iterator = route_srv.response.route.begin(); route_iterator != route_srv.response.route.end(); ++route_iterator)
-			{
-				route_.push_back(*route_iterator);
-			}
-		} 
-		else 
-		{
-			ROS_ERROR("Failed request for routing");
-			return false;
-		}
+	//Create routing request for the vaarkaart.
+	nautonomous_routing_msgs::Route route_srv;
+	//Assume that the start is at index 0 and the destination is at index 1 of the route.
+	route_srv.request.start = route_[0];
+	route_srv.request.destination = route_[1];
+
+	ROS_INFO("MCS: Request Vaarkaart route 2");
+	// Create the routing 
+	ros::ServiceClient vaarkaart_client = node_handle_.serviceClient<nautonomous_routing_msgs::Route>("route");	
+	if(vaarkaart_client.call(route_srv)) 
+	{
+		// Copy the path from the routing to the path vector	
+		route_ = route_srv.response.route;
+		route_ids_ = route_srv.response.route_ids;
 	} 
 	else 
-	// We do not have to plan automatically and assume the action path is already the correct final path.
 	{
-		// Copy the path from the action to the path vector	
-		for(std::vector<geometry_msgs::Pose2D>::const_iterator route_iterator = current_operation_.route.begin(); route_iterator != current_operation_.route.end(); ++route_iterator)
-		{
-			route_.push_back(*route_iterator);
-		}
-	}
+		ROS_ERROR("MCS: Failed request for routing");
+		return false;
+	}		
 
 	return true;
 }
 
 /**
- *\brief Coordinate map cropping
- *\param std::vector<geometry_msgs::Pose2D> &path,  std::basic_string<char> &config_name
+ *\brief Execute map cropping
  *\return success
  */
-bool MissionCoordinatorServer::coordinateMapCropping()
+bool MissionCoordinatorServer::requestCropMap()
 {
-	ROS_INFO("Coordinate Map Cropping");
-	
+	if (!map_enabled_) {
+		ROS_WARN("MCS: Skipping map cropping, because the map is not enabled");
+		return true;
+	}
+
+	ROS_INFO("MCS: Coordinate Map Cropping");
+
 	// Create a map cropping service request
 	nautonomous_map_msgs::Crop crop_srv;
 	crop_srv.request.route = route_;
 	crop_srv.request.name = current_operation_.name;
 
 	// Execute map cropping service call
-	ros::ServiceClient map_cropper_client = node_handle_.serviceClient<nautonomous_map_msgs::Crop>("crop_service");
+	ros::ServiceClient map_cropper_client = node_handle_.serviceClient<nautonomous_map_msgs::Crop>("crop");
+
 	if(map_cropper_client.call(crop_srv))
 	{
 		config_name_ = crop_srv.response.config_name;
 	} 
 	else 
 	{
-		ROS_ERROR("Failed request for map cropper");
+		ROS_ERROR("MCS: Failed request for map cropper!");
 		return false;
-	}
+	}	
 
 	return true;
 }
 
 /**
  *\brief Coordinate map server
- *\param std::basic_string<char> &config_name
  *\return success
  */
-bool MissionCoordinatorServer::coordinateMapServer()
+bool MissionCoordinatorServer::requestGlobalMap()
 {	
-	ROS_INFO("Coordinate Map Server");
+	if (!map_enabled_){
+		ROS_WARN("MCS: Skipping loading global map");
+		return true;
+	}
+	
+	ROS_INFO("MCS: Request Global Map");
 
 	// Create a map server service request
 	nautonomous_map_msgs::Load load_srv;
 	load_srv.request.config_name = config_name_;
 
 	// Execute map server request
-	ros::ServiceClient map_server_client = node_handle_.serviceClient<nautonomous_map_msgs::Load>("load_service");
-	if(map_server_client.call(load_srv))
+	ros::ServiceClient global_map_client = node_handle_.serviceClient<nautonomous_map_msgs::Load>("load");
+
+	if(global_map_client.call(load_srv))
 	{
 		std::string status = load_srv.response.status;
 		//TODO what to do with the status.
 	} 
 	else 
 	{
-		ROS_ERROR("Failed request for map server");
+		ROS_ERROR("MCS: Failed request for global map server!");
+		return false;
+	}
+
+	return true;
+}
+
+bool MissionCoordinatorServer::requestSegmentMap(int route_id)
+{
+	if (!map_enabled_){
+		ROS_WARN("MCS: Skipping loading segment map");
+		return true;
+	}
+	
+	ROS_INFO("MCS: Request Segment Map");
+
+	// Create a map server service request
+	nautonomous_map_msgs::Load load_srv;
+
+	std::string path_configuration = ros::package::getPath("nautonomous_configuration");
+	load_srv.request.config_name = path_configuration + "/config/navigation/map/amsterdam_cropped_segment_" + std::to_string(route_id) + ".yaml";
+
+	ROS_INFO(load_srv.request.config_name.c_str());
+
+	// Execute map server request
+	ros::ServiceClient global_map_client = node_handle_.serviceClient<nautonomous_map_msgs::Load>("load");
+	
+	if(global_map_client.call(load_srv))
+	{
+		std::string status = load_srv.response.status;
+		//TODO what to do with the status.
+	} 
+	else 
+	{
+		ROS_ERROR("MCS: Failed request for global map server!");
 		return false;
 	}
 
@@ -140,40 +178,62 @@ bool MissionCoordinatorServer::coordinateMapServer()
 
 /**
  *\brief Coordinate move base goal
- *\param std::vector<geometry_msgs::Pose2D> &path
  *\return success
  */
-bool MissionCoordinatorServer::coordinateMoveBaseGoal()
+bool MissionCoordinatorServer::requestMoveBaseGoals()
 {
-	ROS_INFO("Coordinate Move Base");
+
+	ROS_INFO("MCS: Request Move Base Goal");
+	bool success = true;
 	int route_size = route_.size();
-	for(int route_index = 0; route_index < route_size; route_index++)
+	for (int route_index = 0; route_index < route_size; route_index++)
 	{
-		if(!move_base_client_->requestGoal(route_.at(route_index)))
+		
+		success = requestMoveBaseGoal(route_index);
+		if (!success)
 		{
-			return false;
+			return success;
 		}
-
-		// Publish the current progression.
-		mission_plan_feedback_.feedback.progression = (int) ((route_index + 1) / route_size); //arbitrary value for now TODO
-		mission_plan_feedback_.feedback.status = "Ok";
-		mission_coordinator_action_server_.publishFeedback(mission_plan_feedback_);
-
-		ros::spinOnce();
 	
 	}
 
-	return true;
+	return success;
+}
+
+bool MissionCoordinatorServer::requestMoveBaseGoal(int route_index)
+{
+	if(!planner_enabled_){
+		ROS_WARN("MCS: Skipping sending move base a request for a goal");
+		ros::Duration(5).sleep();
+		return true;
+	}
+
+	bool success = move_base_client_->requestGoal(route_.at(route_index));
+	
+	if (!success)
+	{
+		ROS_ERROR("MCS: Move Base failed to execute goal!");
+		return success;
+	}
+
+	// Publish the current progression.
+	mission_plan_feedback_.feedback.progression = (int) ((route_index + 1) / route_.size()); //arbitrary value for now TODO
+	mission_plan_feedback_.feedback.status = "Ok";
+	mission_coordinator_action_server_.publishFeedback(mission_plan_feedback_);
+
+	ros::spinOnce();
+
+	return success;
 }
 
 /**
- *\brief Empty constructor for MissionCoordinatorServer
- *\param nautonomous_operation_action::MissionGoalConstPtr &goal
+ *\brief Coordinate mission main function to coordinate tasks
+ *\param nautonomous_operation_action::MissionPlanGoalConstPtr &goal
  *\return
  */
-void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal) 
+void MissionCoordinatorServer::processMissionPlanGoal(const nautonomous_mission_msgs::MissionPlanGoalConstPtr &goal) 
 {	
-	ROS_INFO("Coordinate Mission begin");
+
 	//Check token: TODO
 	//authenticate
 
@@ -184,39 +244,23 @@ void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs:
 	{
 		current_operation_ = *operation_pointer;
 
-		//Mission Planner
-		if(!coordinateRoutingVaarkaart() && routing_enabled_)
+		// Copy the path from the action to the path vector	
+		route_ = current_operation_.route;
+		
+		if (!current_operation_.automatic_routing) {
+			success = customRoutingCoordination();		
+		} else {
+			success = automaticRoutingCoordination();
+		}
+		if (!success)
 		{
-			success = false;
 			break;
 		}
-
-		//Cropper
-		if(!coordinateMapCropping() && map_enabled_)
-		{
-			success = false;
-			break;
-		}
-
-		//Map Server
-		if(!coordinateMapServer() && map_enabled_)
-		{
-			success = false;
-			break;
-		}
-
-		// Request goals using move base navigation stack
-		if(!coordinateMoveBaseGoal() && map_enabled_ && navigate_enabled_)
-		{
-			success = false;
-			break;
-		}	
-
 	}	
-	ROS_INFO("Coordinate Mission end");
 	// Return the progress and status for both success and failed action.
 	if (success) 
 	{
+		ROS_INFO("MCS: Completed mission plan");
 		mission_plan_result_.result.progression = 100;
 		mission_plan_result_.result.status = mission_plan_feedback_.feedback.status;
 		// Set the action state to succeeded
@@ -224,10 +268,73 @@ void MissionCoordinatorServer::coordinateMission(const nautonomous_mission_msgs:
 	} 
 	else 
 	{
+		ROS_INFO("MCS: Aborted mission plan");
 		//TODO correct progression calculation
 		mission_plan_result_.result.progression = 0;
 		mission_plan_result_.result.status = "Failed coordinating mission request";
 		// Set the action state to aborted
 		mission_coordinator_action_server_.setAborted(mission_plan_result_);
 	}
+}
+
+bool MissionCoordinatorServer::customRoutingCoordination()
+{
+	bool success = true;
+
+	ROS_INFO("MCS: custom Routing Coordination");
+
+	// Cropper
+	success = requestCropMap();
+	if (!success)
+	{
+		return success;
+	}
+
+	// Map Server
+	success = requestGlobalMap();
+	if (!success)
+	{
+		return success;
+	}
+
+	// Navigation stack
+	success = requestMoveBaseGoals();
+	if (!success)
+	{
+		return success;
+	}
+
+	return success;
+} 
+
+bool MissionCoordinatorServer::automaticRoutingCoordination()
+{
+	bool success = true;
+
+	ROS_INFO("MCS: Automatic Routing Coordination");
+
+	success = requestVaarkaartRoute();
+	if (!success)
+	{
+		return success;
+	}
+
+	int route_size = route_ids_.size();
+	for (int route_index = 0; route_index < route_size; route_index++)
+	{
+		// Map Server
+		success = requestSegmentMap(route_ids_[route_index]);
+		if (!success)
+		{
+			return success;
+		}
+
+		success = requestMoveBaseGoal(route_index);
+		if (!success)
+		{
+			return success;
+		}
+	}
+
+	return success;
 }
