@@ -13,12 +13,10 @@ operation_name = "coenhaven_dry_dock"
 def mission_plan_client():
     # Creates the SimpleActionClient, passing the type of the action
     # (FibonacciAction) to the constructor.
-    client = actionlib.SimpleActionClient('coordinator_mission_action_server', MissionPlanAction)
+    client = actionlib.SimpleActionClient('server', MissionPlanAction)
 
     # Waits until the action server has started up and started listening for goals.
     client.wait_for_server()
-	
-    print "OPERATION_NAME " + operation_name 
 
     route_poses = []
     # Creates a goal to send to the action server.
@@ -41,8 +39,9 @@ def mission_plan_client():
         return "Error route too short"
 	
     automatic_routing = False
+    
     if len(route_poses) <= 2:
-	automatic_routing = True
+	    automatic_routing = True
 
     # Create actions
     operation1 = OperationPlan(uuid = None, name = operation_name, route = route_poses, actions = None, automatic_routing = automatic_routing)
@@ -71,6 +70,8 @@ if __name__ == '__main__':
 
         print("Requesting mission plan to be executed.")
         result = mission_plan_client()
-   	print("finished")
+   	
     except rospy.ROSInterruptException:
         print("program interrupted before completion")
+
+    print("finished")
