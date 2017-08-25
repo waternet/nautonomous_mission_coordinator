@@ -19,8 +19,8 @@ MissionCoordinatorServer::MissionCoordinatorServer(ros::NodeHandle node_handle, 
 	private_node_handle.param("planner_enabled", planner_enabled_, false);
 
 	ROS_INFO("MCS: routing %i, map %i, planner %i", routing_enabled_, map_enabled_, planner_enabled_);
-
-	move_base_client_ = new MoveBaseClient();
+	
+	move_base_client_ = new MoveBaseClient(node_handle_);
 }
 
 /**

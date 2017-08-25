@@ -3,6 +3,8 @@
 	<arg name="routing_enabled" default="true"/>
 	<arg name="map_enabled" default="true"/>
 	<arg name="planner_enabled" default="true"/>
+	
+	<arg name="map_center_topic" default="map_center"/>
 
 	<arg name="route" default="route"/>
 	<arg name="crop" default="crop"/>
@@ -15,6 +17,8 @@
 		<param name="routing_enabled" type="bool" value="$(arg routing_enabled)"/>
 		<param name="map_enabled" type="bool" value="$(arg map_enabled)"/>
 		<param name="planner_enabled" type="bool" value="$(arg planner_enabled)"/>
+	
+		<remap from="map_center_topic" to="$(arg map_center_topic)"/>
 
 		<remap from="route" to="$(arg route)"/>
 		<remap from="crop" to="$(arg crop)"/>		
