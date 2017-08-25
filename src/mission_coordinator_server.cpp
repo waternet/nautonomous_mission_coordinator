@@ -91,6 +91,7 @@ bool MissionCoordinatorServer::requestCropMap()
 	nautonomous_map_msgs::Crop crop_srv;
 	crop_srv.request.route = route_;
 	crop_srv.request.name = current_operation_.name;
+	crop_srv.request.rectangular = !routing_enabled_;
 
 	// Execute map cropping service call
 	ros::ServiceClient map_cropper_client = node_handle_.serviceClient<nautonomous_map_msgs::Crop>("crop");
